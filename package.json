@@ -1,0 +1,38 @@
+{
+  "name": "ngx-oauth",
+  "version": "0.0.0",
+  "description": "OAuth 2.0 for NGINX written in njs.",
+  "author": "Jakub Jirutka <jakub@jirutka.cz>",
+  "license": "MIT",
+  "homepage": "https://github.com/jirutka/ngx-oauth",
+  "bugs": "https://github.com/jirutka/ngx-oauth/issues/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jirutka/ngx-oauth.git"
+  },
+  "main": "dist/ngx-oauth.js",
+  "files": [
+    "conf",
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "rollup -c --environment NODE_ENV:production",
+    "clean": "rimraf dist/*",
+    "prepare": "patch-package",
+    "watch": "rollup -c --watch"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^16.0.0",
+    "@rollup/plugin-node-resolve": "^10.0.0",
+    "@rollup/plugin-typescript": "^6.1.0",
+    "njs-types": "0.4.4",
+    "patch-package": "^6.2.2",
+    "postinstall-prepare": "^1.0.1",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.32.1",
+    "rollup-plugin-add-git-msg": "^1.1.0",
+    "tslib": "^2.0.3",
+    "typescript": "~4.1.2"
+  }
+}

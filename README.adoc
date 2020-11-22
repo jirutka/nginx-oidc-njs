@@ -1,0 +1,56 @@
+= ngx-oauth
+:pkg-name: ngx-oauth
+:gh-name: jirutka/{pkg-name}
+
+TBD
+
+
+== Requirements
+
+* http://nginx.org[nginx] with:
+** http://nginx.org/en/docs/http/ngx_http_js_module.html[ngx_http_js_module] ≥ 0.4.4
+** https://github.com/openresty/set-misc-nginx-module[ngx_http_set_misc_module] ≥ 0.32
+
+
+== Development
+
+=== System Requirements
+
+* Linux (x86_64, aarch64, armv7 or ppc64le) or macOS
+* https://nodejs.org[Node.js] 14.15+
+* https://docs.npmjs.com/cli/v7/commands/npm/[npm] (distributed with Node.js) or https://yarnpkg.com[yarn]
+* https://pandoc.org[Pandoc] and https://asciidoctor.org[Asciidoctor] (used only for converting README.adoc to Markdown for npmjs)
+
+*NOTE:* If you use Linux or macOS, you do *not* need NGINX installed. Also, you do *not* need Docker or other containerization tool for developing and testing! See https://github.com/jirutka/nginx-testing[nginx-testing] for more information.
+
+
+=== Getting Started
+
+. Clone this repository:
++
+[source, sh, subs="+attributes"]
+git clone https://github.com/{gh-name}.git
+cd {pkg-name}
+
+. Install JavaScript dependencies from https://www.npmjs.com[npmjs]:
++
+[source, sh]
+npm install  # or yarn install
+
+. Build the project:
++
+[source, sh]
+npm build
+
+. Run integration tests:
++
+[source, sh]
+npm test
+
+
+== License
+
+This project is licensed under https://opensource.org/licenses/MIT[MIT License].
+For the full text of the license, see the link:LICENSE[] file.
+
+This README file is licensed under https://creativecommons.org/licenses/by/4.0[Creative Commons Attribution 4.0 International License].
