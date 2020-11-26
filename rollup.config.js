@@ -1,7 +1,7 @@
 import addGitMsg from 'rollup-plugin-add-git-msg'
+import babel from '@rollup/plugin-babel'
 import commonjs from '@rollup/plugin-commonjs'
 import resolve from '@rollup/plugin-node-resolve'
-import typescript from '@rollup/plugin-typescript'
 
 import pkg from './package.json'
 
@@ -18,7 +18,10 @@ const options = {
   external: njsExternals,
   plugins: [
     // Transpile TypeScript sources to JS.
-    typescript(),
+    babel({
+      babelHelpers: 'bundled',
+      extensions: ['.ts', '.mjs', '.js'],
+    }),
     // Resolve node modules.
     resolve({
       extensions: ['.mjs', '.js', '.json', '.ts'],
