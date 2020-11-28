@@ -4,7 +4,7 @@ import * as oauth from '../oauth'
 import { formatCookie } from '../utils'
 
 
-export const auth_proxy: RequestHandler = (ctx) => {
+export const auth_proxy: RequestHandler = async (ctx) => {
   const { conf, getCookie, log, send } = ctx
   ctx.handlerType = 'auth_request'
 
@@ -20,16 +20,14 @@ export const auth_proxy: RequestHandler = (ctx) => {
 
   } else if (refreshToken) {
     log.info?.(`proxy: refreshing token for user ${getCookie(Cookie.Username)}`)
+    const { access_token, expires_in } = await oauth.refreshToken(ctx, refreshToken)
 
-    return oauth.refreshToken(ctx, refreshToken).then(({ access_token, expires_in }) => {
-      log.debug?.(`proxy: token refreshed, got access_token: ${access_token}`)
-
-      return send(204, undefined, {
-        'Authorization': `Bearer ${access_token}`,
-        'Set-Cookie': [
-          formatCookie(Cookie.AccessToken, access_token, expires_in - 60, conf),
-        ],
-      })
+    log.debug?.(`proxy: token refreshed, got access_token: ${access_token}`)
+    return send(204, undefined, {
+      'Authorization': `Bearer ${access_token}`,
+      'Set-Cookie': [
+        formatCookie(Cookie.AccessToken, access_token, expires_in - 60, conf),
+      ],
     })
 
   } else {

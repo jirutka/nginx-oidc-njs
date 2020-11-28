@@ -5,7 +5,7 @@ import { formatCookie } from '../utils'
 import * as uuidCrypto from '../uuid-crypto'
 
 
-export const callback: RequestHandler = (ctx) => {
+export const callback: RequestHandler = async (ctx) => {
   const { conf, fail, getCookie, log, req, send } = ctx
   const { code, error, state } = req.args
 
@@ -45,24 +45,22 @@ export const callback: RequestHandler = (ctx) => {
   }
   log.debug?.(`callback: requesting tokens using auth code: ${code}`)
 
-  return oauth.requestToken(ctx, 'authorization_code', code).then(token => {
-    log.debug?.(`callback: received access_token=${token.access_token}, refresh_token=${token.refresh_token}`)
+  const token = await oauth.requestToken(ctx, 'authorization_code', code)
+  log.debug?.(`callback: received access_token=${token.access_token}, refresh_token=${token.refresh_token}`)
 
-    // NOTE: The only reason why we call verifyToken here is to get username.
-    return oauth.verifyToken(ctx, token.access_token).then(({ user_name }) => {
-      log.info?.(`callback: received tokens for user ${user_name}`)
+  // NOTE: The only reason why we call verifyToken here is to get username.
+  const { user_name } = await oauth.verifyToken(ctx, token.access_token)
+  log.info?.(`callback: received tokens for user ${user_name}`)
 
-      const originalUri = storedState.slice(CSRF_TOKEN_LENGTH + 1) || '/'
-      const refreshTokenEnc = uuidCrypto.encrypt(token.refresh_token!, conf.cookieCipherKey)
+  const originalUri = storedState.slice(CSRF_TOKEN_LENGTH + 1) || '/'
+  const refreshTokenEnc = uuidCrypto.encrypt(token.refresh_token!, conf.cookieCipherKey)
 
-      return send(303, originalUri, {
-        'Set-Cookie': [
-          formatCookie(Cookie.AccessToken, token.access_token, token.expires_in - 60, conf),
-          formatCookie(Cookie.RefreshToken, refreshTokenEnc, conf.cookieMaxAge, conf, 'HttpOnly'),
-          formatCookie(Cookie.Username, user_name, conf.cookieMaxAge, conf),
-          clearStateCookie,
-        ],
-      })
-    })
+  return send(303, originalUri, {
+    'Set-Cookie': [
+      formatCookie(Cookie.AccessToken, token.access_token, token.expires_in - 60, conf),
+      formatCookie(Cookie.RefreshToken, refreshTokenEnc, conf.cookieMaxAge, conf, 'HttpOnly'),
+      formatCookie(Cookie.Username, user_name, conf.cookieMaxAge, conf),
+      clearStateCookie,
+    ],
   })
 }
