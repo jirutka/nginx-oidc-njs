@@ -1,3 +1,5 @@
+import qs from 'querystring'
+
 import type { Context } from './'
 import { Cookie } from './constants'
 import * as uuidCrypto from './uuid-crypto'
@@ -54,11 +56,18 @@ export async function requestToken (ctx: Context, grantType: GrantType, value: s
     refresh_token: 'refresh_token',
   }[grantType]
 
-  const { status, responseBody } = await subrequest('POST', `${conf.internalLocationsPrefix}/request-token`, {
+  const params = {
     grant_type: grantType,
     redirect_uri: conf.redirectUri,
     [paramName]: value,
-  })
+  }
+
+  // NOTE: Parameters for token endpoint should be in body, but we need them
+  // even in URI for caching (cache key is derived from them).
+  const { status, responseBody } = await subrequest('POST', `${conf.internalLocationsPrefix}/request-token`,
+    params,
+    qs.stringify({ ...params, redirect_uri: conf.redirectUri }),
+  )
   switch (status) {
     case 400:
     case 401: {
