@@ -197,10 +197,6 @@ const createContext = <TConfig extends BaseConfig = BaseConfig> (
       setHeadersOut(req, headers)
 
       if (self.handlerType === 'auth_request') {
-        // TODO: Remove after njs 0.4.5 or 0.5.0 is released.
-        if (!body.detail) {
-          delete body.detail
-        }
         req.headersOut['X-Error'] = qs.stringify(body)
         // NOTE: req.return() doesn't work here.
         req.status = 403

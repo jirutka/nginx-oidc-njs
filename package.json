@@ -32,7 +32,7 @@
     "@types/babel__core": "~7.1.12",
     "babel-plugin-const-enum": "^1.0.1",
     "babel-preset-njs": "^0.2.0",
-    "njs-types": "0.4.4",
+    "njs-types": "0.5.1",
     "patch-package": "^6.2.2",
     "postinstall-prepare": "^1.0.1",
     "rimraf": "^3.0.2",

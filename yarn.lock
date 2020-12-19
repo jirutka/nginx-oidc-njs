@@ -1313,10 +1313,10 @@ nice-try@^1.0.4:
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
-njs-types@0.4.4:
-  version "0.4.4"
-  resolved "https://registry.yarnpkg.com/njs-types/-/njs-types-0.4.4.tgz#7a5f88b533736f5dd98bfceaa672433d0e3dcfa7"
-  integrity sha512-4X/kCWmJHKfqEcum+cSQVgCl/yqJskvDhwa+pKzJDSBc5kLcSx+hNy1FZGu1HQ6VZp6FrFa3fjgpgc9vIWyX/w==
+njs-types@0.5.1:
+  version "0.5.1"
+  resolved "https://registry.yarnpkg.com/njs-types/-/njs-types-0.5.1.tgz#0931d2d6d63df93491769f849a17b87466e05cb2"
+  integrity sha512-xIehz4tgUVI9MqGyyfEj23nh+GMRcTIHQkp+EsBgaZAyjR5pMucBxCObsBTVtLcrSt6J2If+GKwmaice8s3JNQ==
 
 object-copy@^0.1.0:
   version "0.1.0"
