@@ -64,14 +64,14 @@ export async function requestToken (ctx: Context, grantType: GrantType, value: s
 
   // NOTE: Parameters for token endpoint should be in body, but we need them
   // even in URI for caching (cache key is derived from them).
-  const { status, responseBody } = await subrequest('POST', `${conf.internalLocationsPrefix}/request-token`,
+  const { status, responseText } = await subrequest('POST', `${conf.internalLocationsPrefix}/request-token`,
     params,
     qs.stringify({ ...params, redirect_uri: conf.redirectUri }),
   )
   switch (status) {
     case 400:
     case 401: {
-      const data = parseJsonBody(responseBody) as ErrorResponse
+      const data = parseJsonBody(responseText) as ErrorResponse
 
       if (data.error === 'invalid_grant') {
         return grantType === 'refresh_token'
@@ -87,7 +87,7 @@ export async function requestToken (ctx: Context, grantType: GrantType, value: s
     }
     // @ts-ignore falls through
     case 200: {
-      const data = parseJsonBody(responseBody)
+      const data = parseJsonBody(responseText)
       if ('access_token' in data) {
         return data as TokenResponse
       }
@@ -148,12 +148,12 @@ export async function verifyToken (ctx: Context, accessToken: string): Promise<R
 async function fetchTokenInfo (ctx: Context, token: string): Promise<TokenInfo> {
   const { conf, subrequest } = ctx
 
-  const { status, responseBody } = await subrequest('POST',
+  const { status, responseText } = await subrequest('POST',
     `${conf.internalLocationsPrefix}/check-token`, { token },
   )
   switch (status) {
     case 400: {
-      const data = parseJsonBody(responseBody) as ErrorResponse
+      const data = parseJsonBody(responseText) as ErrorResponse
       return data.error === 'invalid_token'
         ? reject(401, 'Invalid Access Token', `${data.error_description}: ${token}`, {
             'Set-Cookie': [formatCookie(Cookie.AccessToken, '', 0, conf)],
@@ -162,7 +162,7 @@ async function fetchTokenInfo (ctx: Context, token: string): Promise<TokenInfo> 
     }
     // @ts-ignore falls through
     case 200: {
-      const data = parseJsonBody(responseBody)
+      const data = parseJsonBody(responseText)
       if ('client_id' in data) {
         return data as TokenInfo
       }

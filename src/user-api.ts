@@ -11,7 +11,7 @@ export interface UserInfo {
 export async function fetchUser (ctx: Context, username: string, accessToken: string): Promise<UserInfo> {
   const { conf, subrequest } = ctx
 
-  const { status, responseBody } = await subrequest('GET', `${conf.internalLocationsPrefix}/user`, {
+  const { status, responseText } = await subrequest('GET', `${conf.internalLocationsPrefix}/user`, {
     username,
     access_token: accessToken,
   })
@@ -21,7 +21,7 @@ export async function fetchUser (ctx: Context, username: string, accessToken: st
     }
     // @ts-ignore falls through
     case 200: {
-      const data = parseJsonBody(responseBody)
+      const data = parseJsonBody(responseText)
       if ('roles' in data) {
         return data as UserInfo
       }
