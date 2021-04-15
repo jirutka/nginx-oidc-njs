@@ -173,3 +173,33 @@ async function fetchTokenInfo (ctx: Context, token: string): Promise<TokenInfo> 
     }
   }
 }
+
+/**
+ * Looks for a Bearer access token in the request in:
+ *
+ * 1. `Authorization` header
+ * 2. query parameter `access_token`
+ * 3. cookie {@link Cookie.AccessToken}.
+ *
+ * If the token is not found, returns `undefined`.
+ */
+export function getRequestAccessToken (ctx: Context): string | undefined {
+  const { getCookie, req } = ctx
+
+  const header = req.headersIn.Authorization
+  if (header?.startsWith('Bearer ')) {
+    return header.split(' ')[1]
+  }
+
+  const query = req.args.access_token
+  if (query) {
+    return query
+  }
+
+  const cookie = getCookie(Cookie.AccessToken)
+  if (cookie) {
+    return cookie
+  }
+
+  return
+}

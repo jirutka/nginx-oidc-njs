@@ -8,7 +8,7 @@ export const auth_access: RequestHandler = async (ctx) => {
   const { conf, getCookie, log, send } = ctx
   ctx.handlerType = 'auth_request'
 
-  const accessToken = getCookie(Cookie.AccessToken)
+  const accessToken = oauth.getRequestAccessToken(ctx)
   const refreshToken = getCookie(Cookie.RefreshToken)
 
   if (accessToken) {

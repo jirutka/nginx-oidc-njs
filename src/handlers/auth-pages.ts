@@ -30,7 +30,7 @@ export const auth_pages: RequestHandler = async (ctx) => {
   const config = readSiteConfig(documentRoot + siteRootUri)
   const accessRule = resolveAccessRule(config, branch, pagePath, conf.pagesFallbackPolicy)
 
-  const accessToken = getCookie(Cookie.AccessToken)
+  const accessToken = oauth.getRequestAccessToken(ctx)
   const refreshToken = getCookie(Cookie.RefreshToken)
 
   if (accessToken) {
