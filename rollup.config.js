@@ -21,6 +21,7 @@ const options = {
     // Transpile TypeScript sources to JS.
     babel({
       babelHelpers: 'bundled',
+      envName: 'njs',
       extensions: ['.ts', '.mjs', '.js'],
     }),
     // Resolve node modules.
