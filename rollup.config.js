@@ -1,3 +1,4 @@
+// @ts-check
 import addGitMsg from 'rollup-plugin-add-git-msg'
 import babel from '@rollup/plugin-babel'
 import commonjs from '@rollup/plugin-commonjs'
