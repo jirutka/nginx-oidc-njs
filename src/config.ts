@@ -1,21 +1,23 @@
-import { createConfigReader } from './config-reader'
+import { createConfigReader, DeriveConfigType } from './config-reader'
 import { BasicRole } from './pages'
 import { parseLogLevel, LogLevel } from './logger'
-import { parseBoolean, ValuesExclude } from './utils'
 
 
-const configTemplate = {
-  serverUrl: undefined as string | undefined,
-  clientId: undefined as string | undefined,
+const configDescriptor = {
+  serverUrl: undefined,
+  clientId: undefined,
   scope: '',
   redirectUri: '/-/oauth/callback',
   internalLocationsPrefix: '/-/internal',
-  cookieCipherKey: undefined as string | undefined,
+  cookieCipherKey: undefined,
   cookieMaxAge: 2592000,  // 30 days
   cookiePath: '/',
   cookiePrefix: 'oauth',
   insecure: false,
-  logLevel: LogLevel.error,
+  logLevel: {
+    default: LogLevel.error,
+    parser: parseLogLevel,
+  },
   logPrefix: '[oauth] ',
   errorPagesDir: '',
   pagesDefaultBranch: 'master',
@@ -24,13 +26,6 @@ const configTemplate = {
   pagesFallbackPolicy: BasicRole.AUTHENTICATED as string,
 }
 
-const configConverter = {
-  insecure: parseBoolean,
-  logLevel: parseLogLevel,
-  pagesMinDepth: parseInt,
-  pagesMaxDepth: parseInt,
-}
+export type Config = DeriveConfigType<typeof configDescriptor>
 
-export type Config = ValuesExclude<typeof configTemplate, undefined>
-
-export const configReader = createConfigReader('oauth_', configTemplate, configConverter)
+export const configReader = createConfigReader(configDescriptor, 'oauth_')

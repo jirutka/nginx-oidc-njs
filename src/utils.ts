@@ -6,13 +6,6 @@ import type { HttpError } from './context'
 
 
 /**
- * Exclude from values of object `T` those types that are assignable to `U`.
- */
-export type ValuesExclude<T extends object, U> = {
-  [K in keyof T]: Exclude<T[K], U>
-}
-
-/**
  * Tests if `value` is truthy and returns it. When it's not truthy, `Error` with `message`
  * is thrown.
  *

@@ -143,7 +143,7 @@ export const createNginxHandlers = <TConfig extends BaseConfig> (
 ) => Object.keys(handlers).reduce<Record<string, NginxRequestHandler>>((acc, key) => {
   const handler = handlers[key]
 
-  acc[key] = (req) => invokeHandler(handler, createContext(req, configReader(req)))
+  acc[key] = (req) => invokeHandler(handler, createContext(req, configReader(req.variables)))
   return acc
 }, {})
 
