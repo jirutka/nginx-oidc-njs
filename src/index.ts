@@ -1,5 +1,6 @@
 import { createConfigReader } from './config-reader'
 import { createNginxHandlers, Context as TContext, RequestHandler as TRequestHandler } from './context'
+import { BasicRole } from './pages'
 import * as handlers from './handlers'
 import { parseLogLevel, LogLevel } from './logger'
 import { parseBoolean, ValuesExclude } from './utils'
@@ -19,11 +20,17 @@ const configTemplate = {
   logLevel: LogLevel.error,
   logPrefix: '[oauth] ',
   errorPagesDir: '',
+  pagesDefaultBranch: 'master',
+  pagesMinDepth: 0,
+  pagesMaxDepth: 3,
+  pagesFallbackPolicy: BasicRole.AUTHENTICATED as string,
 }
 
 const configConverter = {
   insecure: parseBoolean,
   logLevel: parseLogLevel,
+  pagesMaxDepth: parseInt,
+  pagesMinDepth: parseInt,
 }
 
 export type Config = ValuesExclude<typeof configTemplate, undefined>
