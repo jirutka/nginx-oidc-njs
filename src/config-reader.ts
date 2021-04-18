@@ -60,7 +60,7 @@ export const createConfigReader = <T extends ConfigDescriptor> (
     const desc = configDescriptor[key]
 
     let value: unknown
-    if (rawValue != null) {
+    if (rawValue != null && rawValue !== '') {
       value = isOptionDescriptor(desc) ? desc.parser(rawValue) : parseFromStr(rawValue, typeof desc)
     } else {
       value = isOptionDescriptor(desc) ? desc.default : desc
