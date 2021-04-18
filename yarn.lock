@@ -540,6 +540,14 @@
   dependencies:
     "@types/node" "*"
 
+"@types/rollup-plugin-add-git-msg@~1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@types/rollup-plugin-add-git-msg/-/rollup-plugin-add-git-msg-1.1.0.tgz#9cc6b24876f2d3a5e4f53884148c483604d9665b"
+  integrity sha512-LnYNr3q1AfYyQhBkcRB0nwxeb+CxXfrfy3STXAiMUd5OxmxExU6DwRo40Il8jdwLjQsGKF1moXo6IJOrm/56Qg==
+  dependencies:
+    "@types/node" "*"
+    rollup ">=0.63.4"
+
 "@yarnpkg/lockfile@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@yarnpkg/lockfile/-/lockfile-1.1.0.tgz#e77a97fbd345b76d83245edcd17d393b1b41fb31"
@@ -1513,7 +1521,7 @@ rollup-plugin-add-git-msg@^1.1.0:
   resolved "https://registry.yarnpkg.com/rollup-plugin-add-git-msg/-/rollup-plugin-add-git-msg-1.1.0.tgz#064241be1bbaf6e1a99294b149ba9fe86e2554f4"
   integrity sha512-f714AUl4sTSkIIzy9HFbOE3JsjM7x6GaQAfCKnWUwsV7qnDzW4G7gKsSKK3JTl37b9L1mZGsRqgCUtuv+1j5AQ==
 
-rollup@^2.45.2:
+rollup@>=0.63.4, rollup@^2.45.2:
   version "2.45.2"
   resolved "https://registry.yarnpkg.com/rollup/-/rollup-2.45.2.tgz#8fb85917c9f35605720e92328f3ccbfba6f78b48"
   integrity sha512-kRRU7wXzFHUzBIv0GfoFFIN3m9oteY4uAsKllIpQDId5cfnkWF2J130l+27dzDju0E6MScKiV0ZM5Bw8m4blYQ==
