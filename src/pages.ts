@@ -25,7 +25,7 @@ export interface AccessRule {
    * or username specified in `deny`, access will be allowed. Otherwise, access will
    * be denied.
    */
-  allow: string[]
+  allow?: string[]
   /**
    * A set of basic roles (see {@link BasicRole}), business roles and/or usernames.
    * If the user has any of these roles or username, access will be denied.
@@ -139,23 +139,25 @@ export function resolveAccessRule (
 }
 
 export function isAnonymousAllowed (rule: AccessRule): boolean {
-  return !!rule.allow.includes(BasicRole.ANONYMOUS)
+  return !!rule.allow?.includes(BasicRole.ANONYMOUS)
     && !rule.deny?.includes(BasicRole.ANONYMOUS)
 }
 
 export function isUserAllowed (rule: AccessRule, { username, roles }: User): boolean {
-  if (rule.deny) {
+  if (rule.deny?.length) {
     const deny = toLookupTable(rule.deny)
     if (username in deny || roles.some(role => role in deny)) {
       return false
     }
   }
-  const allow = toLookupTable(rule.allow)
-  if (BasicRole.ANONYMOUS in allow || BasicRole.AUTHENTICATED in allow) {
-    return true
-  }
-  if (username in allow || roles.some(role => role in allow)) {
-    return true
+  if (rule.allow?.length) {
+    const allow = toLookupTable(rule.allow)
+    if (BasicRole.ANONYMOUS in allow || BasicRole.AUTHENTICATED in allow) {
+      return true
+    }
+    if (username in allow || roles.some(role => role in allow)) {
+      return true
+    }
   }
   return false
 }
