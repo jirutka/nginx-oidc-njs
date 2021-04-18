@@ -18,8 +18,8 @@
   ],
   "scripts": {
     "build": "rollup -c --environment NODE_ENV:production",
-    "clean": "rimraf dist/* node_modules/.cache/*",
-    "lint": "tsc",
+    "clean": "rimraf dist/* lib/* node_modules/.cache/*",
+    "lint": "tsc -b",
     "prepare": "patch-package",
     "watch": "rollup -c --watch"
   },
