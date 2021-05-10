@@ -20,6 +20,7 @@ const configDescriptor = {
   },
   logPrefix: '[oauth] ',
   errorPagesDir: '',
+  accessAllowAnonymous: false,
   pagesDefaultBranch: 'master',
   pagesMinDepth: 0,
   pagesMaxDepth: 3,

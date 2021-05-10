@@ -29,6 +29,10 @@ export const auth_access: RequestHandler = async (ctx) => {
       ],
     })
 
+  } else if (conf.accessAllowAnonymous) {
+    log.debug?.('authorize: access granted to unauthenticated user')
+    return send(204)
+
   } else {
     log.info?.('authorize: no token provided, redirecting to authorization endpoint')
     return send(401, undefined, {
