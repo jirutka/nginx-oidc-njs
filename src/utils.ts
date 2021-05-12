@@ -30,7 +30,7 @@ export function camelToSnake (str: string): string {
 
   for (let i = 0; i < strLen; i++) {
     const char = str[i]
-    res += (char > 'A' && char < 'Z') ? '_' + char.toLowerCase() : char
+    res += (char >= 'A' && char <= 'Z') ? '_' + char.toLowerCase() : char
   }
   return res
 }
