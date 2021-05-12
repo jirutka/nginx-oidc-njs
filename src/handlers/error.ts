@@ -8,6 +8,12 @@ import { renderTemplate, preferredMediaType } from '../utils'
 
 const supportedMediaType = ['text/html', 'application/json'] as const
 
+const statusTexts: Record<number, string> = {
+  401: 'Unauthorized',
+  403: 'Forbidden',
+  500: 'Internal Server Error',
+}
+
 const defaultHtmlTemplate = `
 <!doctype html>
 <html lang="en">
@@ -43,7 +49,9 @@ const defaultHtmlTemplate = `
 
 export const error: RequestHandler = ({ conf, fail, log, req, send, vars }) => {
   const err = qs.decode(vars.args!) as any
-  err.status = parseInt(err.status) || 500
+  err.status = parseInt(err.status) || parseInt(err.code) || 500
+  err.title ??= statusTexts[err.status]
+  delete err.code
 
   if (!isHttpError(err)) {
     return fail(500, 'Invalid Error Arguments', `Given arguments: ${vars.args}.`)
