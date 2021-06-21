@@ -10,6 +10,7 @@ const configDescriptor = {
   redirectUri: '/-/oauth/callback',
   internalLocationsPrefix: '/-/internal',
   cookieCipherKey: undefined,
+  cookieDomain: '',
   cookieMaxAge: 2592000,  // 30 days
   cookiePath: '/',
   cookiePrefix: 'oauth',

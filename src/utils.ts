@@ -36,6 +36,7 @@ export function camelToSnake (str: string): string {
 }
 
 type FormatCookieOpts = {
+  cookieDomain?: string,
   cookiePath: string,
   insecure?: boolean,
 }
@@ -47,6 +48,7 @@ type FormatCookieOpts = {
  * @param value The cookie value.
  * @param maxAge Number of seconds until the cookie expires.
  * @param opts An object with:
+ *   - `cookieDomain` - `Domain` attribute
  *   - `cookiePath` - `Path` attribute
  *   - `insecure` - if `true`, `SameSite=Strict; Secure` will **not** be set
  * @param extra Any extra attributes as string that will be appended to the cookie value.
@@ -59,8 +61,13 @@ export function formatCookie (
   opts: FormatCookieOpts,
   extra: string = '',
 ): string {
-  const securityAttrs = opts.insecure ? '' : '; SameSite=Strict; Secure'
-  return `${name}=${value}; Path=${opts.cookiePath}; Max-Age=${maxAge}${securityAttrs};${extra}`
+  if (!opts.insecure) {
+    extra = `SameSite=Strict; Secure; ${extra}`
+  }
+  if (opts.cookieDomain) {
+    extra = `Domain=${opts.cookieDomain}; ${extra}`
+  }
+  return `${name}=${value}; Path=${opts.cookiePath}; Max-Age=${maxAge};${extra}`
 }
 
 /**
