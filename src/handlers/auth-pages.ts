@@ -18,9 +18,13 @@ export const auth_pages: RequestHandler = async (ctx) => {
   const { conf, getCookie, fail, log, send, vars } = ctx
   ctx.handlerType = 'auth_request'
 
-  const documentRoot = assert(vars.realpath_root, 'realpath_root must be defined')
   const requestUri = assert(vars.request_uri, 'request_uri must be defined')
 
+  // `realpath_root` is undefined if `root` directory doesn't exist
+  const documentRoot = vars.realpath_root
+  if (!documentRoot) {
+    return fail(404, 'Site Not Found')
+  }
   const siteRootUri = findSiteRootUri(requestUri, documentRoot, conf.pagesMinDepth, conf.pagesMaxDepth)
   if (!siteRootUri) {
     return fail(404, 'Site Not Found')
