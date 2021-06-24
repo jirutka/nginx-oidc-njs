@@ -9,8 +9,8 @@ const configDescriptor = {
   scope: '',
   redirectUri: '/-/oauth/callback',
   internalLocationsPrefix: '/-/internal',
+  cookieAttrs: '',
   cookieCipherKey: undefined,
-  cookieDomain: '',
   cookieMaxAge: 2592000,  // 30 days
   cookiePath: '/',
   cookiePrefix: 'oauth',
