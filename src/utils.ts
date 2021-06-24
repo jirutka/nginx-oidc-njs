@@ -48,9 +48,9 @@ type FormatCookieOpts = {
  * @param value The cookie value.
  * @param maxAge Number of seconds until the cookie expires.
  * @param opts An object with:
- *   - `cookieAttrs` - Any extra attributes as string (e.g. `'Domain=foo.xyz'`)
+ *   - `cookieAttrs` - Any extra attributes as string (e.g. `'Domain=foo.xyz; SameSite=Strict'`)
  *   - `cookiePath` - `Path` attribute
- *   - `insecure` - if `true`, `SameSite=Strict; Secure` will **not** be set
+ *   - `insecure` - if `true`, `Secure` will **not** be set
  * @param extra Any extra attributes as string that will be appended to the cookie value.
  * @returns A cookie string.
  */
@@ -62,7 +62,7 @@ export function formatCookie (
   extra: string = '',
 ): string {
   return `${name}=${value}; Path=${opts.cookiePath}; Max-Age=${maxAge}`
-    + (opts.insecure ? '' : '; SameSite=Strict; Secure')
+    + (opts.insecure ? '' : '; Secure')
     + (extra ? `; ${extra}` : '')
     + (opts.cookieAttrs ? `; ${opts.cookieAttrs}` : '')
 }
@@ -72,8 +72,9 @@ export function formatCookie (
  *
  * @param name The cookie name.
  * @param opts An object with:
+ *   - `cookieAttrs` - Any extra attributes as string (e.g. `'Domain=foo.xyz; SameSite=Strict'`)
  *   - `cookiePath` - `Path` attribute
- *   - `insecure` - if `true`, `SameSite=Strict; Secure` will **not** be set
+ *   - `insecure` - if `true`, `Secure` will **not** be set
  * @returns A cookie string.
  */
 export function formatCookieClear (name: string, opts: FormatCookieOpts): string {
