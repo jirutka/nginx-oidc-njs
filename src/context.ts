@@ -38,12 +38,12 @@ export interface Context<TConfig> {
   readonly vars: NginxVariables
 
   /**
-   * Type of the request handler. Defaults to `'location'`.
+   * Type of the request handler. Defaults to `'content'`.
    *
    * When `'auth_request'` is used, `fail()` function sends error object via header
    * `X-Error` instead of request body.
    */
-  handlerType: 'auth_request' | 'location'
+  handlerType: 'auth_request' | 'content'
 
   /**
    * Returns value of the named cookie.
@@ -166,7 +166,7 @@ const createContext = <TConfig extends BaseConfig = BaseConfig> (
     conf,
     req,
     vars: req.variables,
-    handlerType: 'location',
+    handlerType: 'content',
 
     log: createLogger(req, conf),
 
