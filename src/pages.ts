@@ -66,7 +66,7 @@ export function readSiteConfig (siteRootDir: string): SiteConfig {
  * @param rootDir An absolute path of the directory where to start looking for the site config.
  * @param minDepth At which depth from the `rootDir` start looking for the site root.
  * @param maxDepth At which depth from the `rootDir` stop looking for the site root.
- * @return URI prefix of the site root, or `null` if not found.
+ * @return URI prefix of the site root (with a leading and trailing slash), or `null` if not found.
  */
 export function findSiteRootUri (
   requestUri: string,
@@ -77,8 +77,8 @@ export function findSiteRootUri (
   const subdirs = requestUri.split('/', maxDepth)
   const subdirsLen = subdirs.length
 
-  for (let depth = 0, path = '/'; depth < subdirsLen; path += '/' + subdirs[++depth]) {
-    if (depth >= minDepth && pathExists(`${rootDir}${path}/${SITE_CONFIG_NAME}`)) {
+  for (let depth = 0, path = '/'; depth < subdirsLen; path += subdirs[++depth] + '/') {
+    if (depth >= minDepth && pathExists(`${rootDir}${path}${SITE_CONFIG_NAME}`)) {
       return path
     }
   }
