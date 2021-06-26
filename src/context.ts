@@ -190,8 +190,8 @@ const createContext = <TConfig extends BaseConfig = BaseConfig> (
       const level = status >= 500 ? 'error' : 'warn'
 
       self.log[level]?.(`${status} ${body.title}: ${body.detail}`)
-      if (statusOrError instanceof Error && statusOrError.stack) {
-        self.log.error(statusOrError.stack)
+      if (self.log.debug && statusOrError instanceof Error && statusOrError.stack) {
+        self.log.debug(statusOrError.stack)
       }
 
       setHeadersOut(req, headers)
