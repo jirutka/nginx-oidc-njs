@@ -1,5 +1,5 @@
 import type { Context, RequestHandler } from '..'
-import { Cookie } from '../constants'
+import { Cookie, VAR_SITE_ROOT_URI } from '../constants'
 import * as oauth from '../oauth'
 import { fetchUser } from '../user-api'
 import { assert, formatCookie } from '../utils'
@@ -25,10 +25,15 @@ export const auth_pages: RequestHandler = async (ctx) => {
   if (!documentRoot) {
     return fail(404, 'Site Not Found')
   }
-  const siteRootUri = findSiteRootUri(requestUri, documentRoot, conf.pagesMinDepth, conf.pagesMaxDepth)
+
+  // Variable VAR_SITE_ROOT_URI is set by the pages-document-uri handler, when used.
+  const siteRootUri = vars[VAR_SITE_ROOT_URI]
+    || findSiteRootUri(requestUri, documentRoot, conf.pagesMinDepth, conf.pagesMaxDepth)
   if (!siteRootUri) {
     return fail(404, 'Site Not Found')
   }
+  log.debug?.(`authorize: resolved site root uri: ${siteRootUri}`)
+
   const [branch = conf.pagesDefaultBranch, pagePath] = splitUriToBranchAndPagePath(requestUri, siteRootUri)
 
   const config = readSiteConfig(documentRoot + siteRootUri)

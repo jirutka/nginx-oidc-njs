@@ -1,5 +1,7 @@
 export const CSRF_TOKEN_LENGTH = 8
 
+export const VAR_SITE_ROOT_URI = 'pages_site_root_uri'
+
 export const enum Cookie {
   AccessToken = 'oauth_access_token',
   RefreshToken = 'oauth_refresh_token',
