@@ -11,7 +11,7 @@ type QueryParams = ParsedUrlQueryInput | string
 
 type NginxRequestHandler = (req: NginxHTTPRequest) => void
 
-export type RequestHandler<TConfig = BaseConfig> = (ctx: Context<TConfig>) => void | Promise<void>
+export type RequestHandler<TConfig = BaseConfig> = (ctx: Context<TConfig>) => void | string | Promise<void>
 
 /**
  * Request handler's context, an abstraction over `NginxHTTPRequest`.
@@ -38,12 +38,18 @@ export interface Context<TConfig> {
   readonly vars: NginxVariables
 
   /**
-   * Type of the request handler. Defaults to `'content'`.
+   * Type of the request handler:
    *
-   * When `'auth_request'` is used, `fail()` function sends error object via header
-   * `X-Error` instead of request body.
+   * - `'content'` – A location content handler used for `js_content` (default).
+   *
+   * - `'auth_request'` – The same as `'content'`, but used within `auth_request`.
+   *   The `fail()` function sends error object via header `X-Error` instead of the
+   *   request body.
+   *
+   * - `'variable'` – A function referenced in `js_set`. It must be synchronous, return
+   *   a string value and shouldn't call `fail()`, `send()` and `internalRedirect()`.
    */
-  handlerType: 'auth_request' | 'content'
+  handlerType: 'auth_request' | 'content' | 'variable'
 
   /**
    * Returns value of the named cookie.
@@ -147,13 +153,18 @@ export const createNginxHandlers = <TConfig extends BaseConfig> (
   return acc
 }, {})
 
-function invokeHandler <T> (handler: RequestHandler<T>, ctx: Context<T>): void {
+function invokeHandler <T> (handler: RequestHandler<T>, ctx: Context<T>): void | string {
   try {
     const res = handler(ctx)
-    if (res && typeof res.catch === 'function') {
+    if (typeof res === 'string') {
+      return res
+    } else if (res && typeof res.catch === 'function') {
       res.catch(ctx.fail)
     }
   } catch (err) {
+    if (ctx.handlerType === 'variable') {
+      throw err
+    }
     ctx.fail(err)
   }
 }
