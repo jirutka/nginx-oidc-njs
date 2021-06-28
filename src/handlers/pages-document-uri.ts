@@ -32,8 +32,12 @@ export const pages_document_uri: RequestHandler = (ctx) => {
   }
 
   const [branch = conf.pagesDefaultBranch, pagePath] = splitUriToBranchAndPagePath(requestUri, siteRootUri)
-  const documentUri = `${siteRootUri}@${branch}${pagePath}`
 
-  log.debug?.(`pages_document_uri: mapping ${vars.request_uri} to ${documentUri}`)
-  return documentUri
+  let uri = `${siteRootUri}@${branch}${pagePath}`
+  if (requestUri.endsWith('/')) {
+    uri += 'index.html'
+  }
+
+  log.debug?.(`pages_document_uri: mapping ${vars.request_uri} to ${uri}`)
+  return uri
 }
