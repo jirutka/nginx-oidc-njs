@@ -95,7 +95,7 @@ export function splitUriToBranchAndPagePath (
   requestUri: string,
   siteRootUri: string,
 ): [branch: string | undefined, path: string] {
-  const path = requestUri.slice(siteRootUri.length - 1)
+  const path = requestUri.slice(siteRootUri.length - 1) || '/'
 
   if (path[1] !== '@') {
     return [undefined, path]
