@@ -46,6 +46,12 @@ interface User {
   readonly roles: ReadonlyArray<string>
 }
 
+// A special directory (or symlink) for "root sites" - a site of the namespace.
+// It's effectively like merging ./__ROOT__/* into ./.
+const ROOT_SITE_PREFIX = '__ROOT__/'
+
+// Name of file site config file that denotes the site's root directory (where
+// `@<branch>` directories are located).
 const SITE_CONFIG_NAME = '.site.json'
 
 
@@ -83,6 +89,13 @@ export function findSiteRootUri (
       return path
     }
   }
+  // TODO: This looks hack-ish, figure out a better way.
+  const maxDepth2 = Math.min(subdirsLen, maxDepth - 1)
+  for (let depth = 0, path = '/'; depth < maxDepth2; path += subdirs[++depth] + '/') {
+    if (depth >= minDepth && pathExists(`${rootDir}${path}${ROOT_SITE_PREFIX}${SITE_CONFIG_NAME}`)) {
+      return path + ROOT_SITE_PREFIX
+    }
+  }
   return null
 }
 
@@ -95,7 +108,12 @@ export function splitUriToBranchAndPagePath (
   requestUri: string,
   siteRootUri: string,
 ): [branch: string | undefined, path: string] {
-  const path = requestUri.slice(siteRootUri.length - 1) || '/'
+  let prefixLen = siteRootUri.length - 1
+
+  if (siteRootUri.endsWith(ROOT_SITE_PREFIX)) {
+    prefixLen -= ROOT_SITE_PREFIX.length
+  }
+  const path = requestUri.slice(prefixLen) || '/'
 
   if (path[1] !== '@') {
     return [undefined, path]
