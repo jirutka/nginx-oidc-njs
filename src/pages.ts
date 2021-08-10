@@ -113,7 +113,8 @@ export function splitUriToBranchAndPagePath (
   if (siteRootUri.endsWith(ROOT_SITE_PREFIX)) {
     prefixLen -= ROOT_SITE_PREFIX.length
   }
-  const path = requestUri.slice(prefixLen) || '/'
+  const argsIdx = requestUri.indexOf('?', prefixLen)
+  const path = requestUri.slice(prefixLen, argsIdx >= 0 ? argsIdx : undefined) || '/'
 
   if (path[1] !== '@') {
     return [undefined, path]
