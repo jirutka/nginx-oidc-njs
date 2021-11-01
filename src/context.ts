@@ -200,7 +200,7 @@ const createContext = <TConfig extends BaseConfig = BaseConfig> (
       const { status } = body
       const level = status >= 500 ? 'error' : 'warn'
 
-      self.log[level]?.(`${status} ${body.title}: ${body.detail}`)
+      self.log[level]?.(`[${body.trackId}] ${status} ${body.title}: ${body.detail}`)
       if (self.log.debug && statusOrError instanceof Error && statusOrError.stack) {
         self.log.debug(statusOrError.stack)
       }
