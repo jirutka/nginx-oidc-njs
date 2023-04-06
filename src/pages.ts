@@ -9,16 +9,24 @@ export interface SiteConfig {
   /**
    * Access rules.
    */
-  access?: AccessRules
+  access?: BranchAccessRules[]
 }
 
-type AccessRules = {
-  [branchPattern: string]: {
-    [uriPattern: string]: AccessRule,
-  },
+// XXX: We have to use this unnecessarily verbose structure instead of just
+//  nested objects with branch and path as keys due to
+//  https://github.com/nginx/njs/issues/189.
+interface BranchAccessRules {
+  branch: string,
+  rules: AccessRule[],
 }
 
 export interface AccessRule {
+  /**
+   * A glob pattern specifying the page paths to which the rule applies.
+   * Subpages are implicitly included, so there is no need to specify them
+   * further. The path must start with `/` and it's relative to the site root.
+   */
+  path: string,
   /**
    * A set of basic roles (see {@link BasicRole}), business roles and/or usernames.
    * If the user has any of the specified roles or username and has none of the roles
@@ -143,17 +151,19 @@ export function resolveAccessRule (
 ): AccessRule {
   const { access } = config
 
-  const branchKey = access && Object.keys(access).find(glob => {
-    return glob === branch || globMatch(glob, branch)
-  })
-  if (branchKey) {
-    const pathKey = Object.keys(access![branchKey]).find(glob => globMatch(glob, uri))
+  const { rules } = access && access.find(rule => {
+    return rule.branch === branch || globMatch(rule.branch, branch)
+  }) || {}
 
-    if (pathKey) {
-      return access![branchKey][pathKey]
+  if (rules) {
+    const rule = rules.find(rule => globMatch(rule.path, uri))
+    if (rule) {
+      return rule
     }
   }
+
   return {
+    path: '/',
     allow: fallbackPolicy === 'DENY' ? [] : [fallbackPolicy],
   }
 }
