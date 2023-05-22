@@ -1,4 +1,5 @@
-import * as FS from 'fs'
+import * as FS from 'node:fs'
+
 import { after, before, Context, RootHookObject } from 'mocha'
 import { beforeEachSuite } from 'mocha-suite-hooks'
 import { parseConf, startNginx, NginxServer, PatchOperation } from 'nginx-testing'

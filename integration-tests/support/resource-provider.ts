@@ -1,9 +1,10 @@
+import http from 'node:http'
+import { URL } from 'node:url'
+
 import Router from '@koa/router'
-import http from 'http'
 import createError from 'http-errors'
 import Koa, { Middleware, Next } from 'koa'
 import LogLevel from 'loglevel'
-import { URL } from 'url'
 
 import { asyncServer, AsyncServer } from './async-server'
 import { createClient } from './http-client'

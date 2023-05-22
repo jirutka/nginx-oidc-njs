@@ -1,5 +1,6 @@
+import http from 'node:http'
+
 import Router from '@koa/router'
-import http from 'http'
 import Koa from 'koa'
 import bodyParser from 'koa-bodyparser'
 import LogLevel from 'loglevel'

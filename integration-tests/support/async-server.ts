@@ -1,6 +1,7 @@
+import type * as net from 'node:net'
+import { promisify } from 'node:util'
+
 import shutdownable from 'http-shutdown'
-import type * as net from 'net'
-import { promisify } from 'util'
 
 
 export interface AsyncServer extends net.Server {

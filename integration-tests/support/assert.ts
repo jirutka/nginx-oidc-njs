@@ -1,4 +1,5 @@
-import nodeAssert from 'assert'
+import nodeAssert from 'node:assert'
+
 import empower from 'empower'
 import formatter from 'power-assert-formatter'
 

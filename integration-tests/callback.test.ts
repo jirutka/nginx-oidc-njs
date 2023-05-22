@@ -1,4 +1,4 @@
-import { URL, URLSearchParams } from 'url'
+import { URL, URLSearchParams } from 'node:url'
 
 import assert from './support/assert'
 import { useOAuthServer } from './support/hooks'

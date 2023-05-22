@@ -1,5 +1,5 @@
 // @ts-check
-import * as FS from 'fs'
+import * as FS from 'node:fs'
 
 import addGitMsg from 'rollup-plugin-add-git-msg'
 import { babel } from '@rollup/plugin-babel'
