@@ -161,7 +161,7 @@ function invokeHandler <T> (handler: RequestHandler<T>, ctx: Context<T>): void |
     } else if (res && typeof res.catch === 'function') {
       res.catch(ctx.fail)
     }
-  } catch (err) {
+  } catch (err: any) {
     if (ctx.handlerType === 'variable') {
       throw err
     }

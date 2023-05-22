@@ -235,7 +235,7 @@ export function random (length = 8, radix = 32): string {
 export function readJSON (filepath: string): unknown {
   try {
     return JSON.parse(fs.readFileSync(filepath, 'utf8'))
-  } catch (err) {
+  } catch (err: any) {
     err.message = `${filepath}: ${err.message}`
     throw err
   }

@@ -56,7 +56,7 @@ const oauthAuthenticator = (opts: RPOptions): Middleware<{}, AppContext> => {
 async function errorMiddleware (ctx: AppContext, next: Next): Promise<any> {
   try {
     await next()
-  } catch (err) {
+  } catch (err: any) {
     log.warn(err)
 
     // Tell Koa's onerror handler to not log this error.
