@@ -3,6 +3,7 @@ import { URL, URLSearchParams } from 'node:url'
 import assert from './support/assert'
 import { useOAuthServer } from './support/hooks'
 import { before, describe, useSharedSteps } from './support/mocha'
+import { hashCsrf } from './support/utils'
 import commonSteps from './steps'
 
 import { Cookie, CSRF_TOKEN_LENGTH } from '../src/constants'
@@ -11,6 +12,7 @@ import { Cookie, CSRF_TOKEN_LENGTH } from '../src/constants'
 describe('Callback', () => {
   const code = 'abcdef'
   const csrfToken = ''.padEnd(CSRF_TOKEN_LENGTH, 'xyz')
+  const csrfTokenHash = hashCsrf(csrfToken)
   const originalUri = '/index.html'
   const state = `${csrfToken}:${originalUri}`
 
@@ -34,7 +36,7 @@ describe('Callback', () => {
 
   describe('when state cookie is missing', () => {
     when("I make a GET request to the proxy's callback endpoint with query: {query}",
-         `code=${code}&state=${csrfToken}`)
+         `code=${code}&state=${csrfTokenHash}`)
 
     then("the response status should be {status}", 400)
   })
@@ -55,7 +57,7 @@ describe('Callback', () => {
       given("state cookie with a CSRF token is provided")
 
       when("I make a GET request to the proxy's callback endpoint with query: {query}",
-           `error=access_denied&state=${csrfToken}`)
+           `error=access_denied&state=${csrfTokenHash}`)
 
       then("the response status should be {status}", 403)
 
@@ -67,7 +69,7 @@ describe('Callback', () => {
         given("state cookie with a CSRF token is provided")
 
         when("I make a GET request to the proxy's callback endpoint with query: {query}",
-             `error=${error}&state=${csrfToken}`)
+             `error=${error}&state=${csrfTokenHash}`)
 
         then("the response status should be {status}", 502)
       })
@@ -77,7 +79,7 @@ describe('Callback', () => {
       given("state cookie with a CSRF token is provided")
 
       when("I make a GET request to the proxy's callback endpoint with query: {query}",
-           `code=foobar&state=${csrfToken}`)
+           `code=foobar&state=${csrfTokenHash}`)
 
       then("the response status should be {status}", 401)
     })
@@ -91,7 +93,7 @@ describe('Callback', () => {
       given("state cookie with a CSRF token is provided")
 
       when("I make a GET request to the proxy's callback endpoint with a valid 'code' and 'state'", async (ctx) => {
-        ctx.resp = await ctx.client.get(`${ctx.proxyUrl}/-/oauth/callback?code=${code}&state=${csrfToken}`)
+        ctx.resp = await ctx.client.get(`${ctx.proxyUrl}/-/oauth/callback?code=${code}&state=${csrfTokenHash}`)
       })
 
       then("the proxy should redirect me to <originalUri>", ({ resp }) => {

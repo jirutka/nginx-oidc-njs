@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import fs from 'fs'
 import qs from 'querystring'
 import type { ParsedUrlQueryInput } from 'querystring'
@@ -163,6 +164,13 @@ export function globMatch (glob: string, text: string): boolean {
 }
 
 /**
+ * Returns a hash of the given CSRF `token`.
+ */
+export function hashCsrfToken (token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex')
+}
+
+/**
  * Returns `true` if the `path` exists (i.e. it's a file or directory),
  * otherwise `false`.
  */
@@ -216,17 +224,6 @@ export function preferredMediaType <T extends readonly string[]> (
     }
   }
   return supportedTypes[0]
-}
-
-/**
- * Returns a random alphanumeric string of the specified `length`.
- */
-export function random (length = 8, radix = 32): string {
-  let res = ''
-  while (length--) {
-    res += Math.floor(Math.random() * radix).toString(radix)
-  }
-  return res
 }
 
 /**

@@ -1,6 +1,7 @@
 import assert from './support/assert'
 import { useOAuthServer } from './support/hooks'
 import { describe, useSharedSteps } from './support/mocha'
+import { hashCsrf } from './support/utils'
 import commonSteps from './steps'
 
 import { Cookie as CookieName } from '../src/constants'
@@ -68,8 +69,8 @@ describe('Login', () => {
 
       then("OAAS should redirect me to the $oauth_redirect_uri")
 
-      and("the URL should contain parameter 'state' with <csrfToken> and parameter 'code'", ({ resp }) => {
-        assert.includes(resp.headers.location, `state=${csrfToken}`)
+      and("the URL should contain parameter 'state' with hashed <csrfToken> and parameter 'code'", ({ resp }) => {
+        assert.includes(resp.headers.location, `state=${hashCsrf(csrfToken)}`)
         assert.includes(resp.headers.location, 'code=')
       })
 

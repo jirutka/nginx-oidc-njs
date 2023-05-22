@@ -1,7 +1,7 @@
 import type { RequestHandler } from '..'
 import { Cookie, CSRF_TOKEN_LENGTH } from '../constants'
 import * as oauth  from '../oauth'
-import { formatCookie } from '../utils'
+import { formatCookie, hashCsrfToken } from '../utils'
 import * as uuidCrypto from '../uuid-crypto'
 
 
@@ -9,20 +9,24 @@ export const callback: RequestHandler = async (ctx) => {
   const { conf, fail, getCookie, log, req, send } = ctx
   const { code, error, state } = req.args
 
-  const storedState = getCookie(Cookie.State, true)
-
-  const clearStateCookie = formatCookie(Cookie.State, '', 0, conf, 'HttpOnly')
-  const headers: NginxHeadersOut = { 'Set-Cookie': [clearStateCookie] }
-
   if (!code && !error) {
     return fail(400, 'Bad Request', "Missing query parameter 'code' or 'error'.")
   }
+
+  const storedState = getCookie(Cookie.State, true)
+  const clearStateCookie = formatCookie(Cookie.State, '', 0, conf, 'HttpOnly')
+  const headers: NginxHeadersOut = { 'Set-Cookie': [clearStateCookie] }
+
   if (!storedState || storedState.length < CSRF_TOKEN_LENGTH) {
     return fail(400, 'Invalid State', 'Missing or corrupted state cookie.', headers)
   }
-  if (state.length !== CSRF_TOKEN_LENGTH || !storedState.startsWith(state)) {
+  const storedCsrf = storedState.slice(0, CSRF_TOKEN_LENGTH)
+  const originalUri = storedState.slice(CSRF_TOKEN_LENGTH + 1) || '/'
+
+  if (state !== hashCsrfToken(storedCsrf)) {
     return fail(400, 'Invalid State', 'CSRF token is missing or invalid.', headers)
   }
+
   if (error) {
     const description = req.args.error_description
     switch (error) {
@@ -52,7 +56,6 @@ export const callback: RequestHandler = async (ctx) => {
   const { user_name } = await oauth.verifyToken(ctx, token.access_token)
   log.info?.(`callback: received tokens for user ${user_name}`)
 
-  const originalUri = storedState.slice(CSRF_TOKEN_LENGTH + 1) || '/'
   const refreshTokenEnc = uuidCrypto.encrypt(token.refresh_token!, conf.cookieCipherKey)
 
   return send(303, originalUri, {

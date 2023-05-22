@@ -1,3 +1,5 @@
+import crypto from 'node:crypto'
+
 
 export function arrify <T> (value: T | T[] | undefined | null): T[] {
   return value == null ? []
@@ -13,4 +15,8 @@ export function removeBy <T> (array: T[], predicate: (item: T) => boolean): numb
     n++
   }
   return n
+}
+
+export function hashCsrf (value: string): string {
+  return crypto.createHash('sha256').update(value).digest('hex')
 }

@@ -1,4 +1,5 @@
-export const CSRF_TOKEN_LENGTH = 8
+// Equals to the nginx's `$request_id` length.
+export const CSRF_TOKEN_LENGTH = 32
 
 export const VAR_SITE_ROOT_URI = 'pages_site_root_uri'
 
