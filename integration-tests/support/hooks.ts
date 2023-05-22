@@ -24,7 +24,7 @@ declare module 'mocha' {
   }
 }
 
-const nginxVersion = process.env.NGINX_VERSION || '1.19.x'
+const nginxVersion = process.env.NGINX_VERSION || '1.22.x'
 const nginxConfig = `${__dirname}/../nginx.conf`
 const certificate = FS.readFileSync(`${__dirname}/../fixtures/server.crt`)
 
