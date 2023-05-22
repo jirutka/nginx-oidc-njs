@@ -18,7 +18,7 @@ TBD
 
 * Linux (x86_64, aarch64, armv7 or ppc64le) or macOS
 * https://nodejs.org[Node.js] 14.15+
-* https://docs.npmjs.com/cli/v7/commands/npm/[npm] (distributed with Node.js) or https://yarnpkg.com[yarn]
+* https://docs.npmjs.com/cli/v7/commands/npm/[npm] (distributed with Node.js)
 * https://pandoc.org[Pandoc] and https://asciidoctor.org[Asciidoctor] (used only for converting README.adoc to Markdown for npmjs)
 
 *NOTE:* If you use Linux or macOS, you do *not* need NGINX installed. Also, you do *not* need Docker or other containerization tool for developing and testing! See https://github.com/jirutka/nginx-testing[nginx-testing] for more information.
@@ -35,7 +35,7 @@ cd {pkg-name}
 . Install JavaScript dependencies from https://www.npmjs.com[npmjs]:
 +
 [source, sh]
-npm install  # or yarn install
+npm install
 
 . Build the project:
 +
@@ -45,7 +45,7 @@ npm build
 . Run integration tests:
 +
 [source, sh]
-npm test
+npm run test
 
 
 == License
