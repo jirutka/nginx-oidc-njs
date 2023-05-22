@@ -8,7 +8,7 @@ TBD
 == Requirements
 
 * http://nginx.org[nginx] with:
-** http://nginx.org/en/docs/http/ngx_http_js_module.html[ngx_http_js_module] ≥ 0.5.0
+** http://nginx.org/en/docs/http/ngx_http_js_module.html[ngx_http_js_module] ≥ 0.7.0
 ** https://github.com/openresty/set-misc-nginx-module[ngx_http_set_misc_module] ≥ 0.32
 
 
