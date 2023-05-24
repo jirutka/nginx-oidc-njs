@@ -85,11 +85,13 @@ export async function requestToken (ctx: Context, grantType: GrantType, value: s
           + ' This is most likely caused by the OAuth proxy misconfiguration.')
       }
     }
-    // @ts-ignore falls through
     case 200: {
       const data = parseJsonBody(responseText)
-      if ('access_token' in data) {
-        return data as TokenResponse
+      if (isTokenResponse(data)) {
+        return data
+      } else {
+        return reject(500, 'OAuth Server Error',
+          `OAuth server returned an invalid token response: ${responseText?.slice(0, 128)}...`)
       }
     }
     default: {
@@ -97,6 +99,16 @@ export async function requestToken (ctx: Context, grantType: GrantType, value: s
         `Unable to issue an access token, OAuth server returned HTTP ${status}.`)
     }
   }
+}
+
+function isTokenResponse(obj: unknown): obj is TokenResponse {
+  const o = obj as TokenResponse
+
+  return typeof o.token_type === 'string'
+    && o.token_type.toLowerCase() === 'bearer'
+    && typeof o.access_token === 'string'
+    && typeof o.expires_in === 'number'
+    && (!o.refresh_token || typeof o.refresh_token === 'string')
 }
 
 /**
