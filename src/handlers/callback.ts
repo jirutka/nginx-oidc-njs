@@ -43,7 +43,7 @@ export const callback: RequestHandler = async (ctx) => {
       default: {
         return fail(500, 'OAuth Configuration Error',
           `OAuth server returned error: ${description} (${error}).`
-          + 'This is most likely caused by the OAuth proxy misconfiguration.')
+          + ' This is most likely caused by the OAuth proxy misconfiguration.')
       }
     }
   }

@@ -82,7 +82,7 @@ export async function requestToken (ctx: Context, grantType: GrantType, value: s
       } else {
         return reject(500, 'OAuth Configuration Error',
           `OAuth server returned error: ${data.error_description} (${data.error}).`
-          + 'This is most likely caused by the OAuth proxy misconfiguration.')
+          + ' This is most likely caused by the OAuth proxy misconfiguration.')
       }
     }
     // @ts-ignore falls through
