@@ -78,10 +78,10 @@ async function authorizeTokenAndAccess (
 ): Promise<void> {
   const { fail, log, send } = ctx
 
-  const token = await oauth.verifyToken(ctx, accessToken)
+  const { username } = await oauth.verifyToken(ctx, accessToken)
 
-  log.debug?.(`authorize: access token verified, fetching user ${token.user_name}`)
-  const user = await fetchUser(ctx, token.user_name, accessToken)
+  log.debug?.(`authorize: access token verified, fetching user ${username}`)
+  const user = await fetchUser(ctx, username, accessToken)
 
   if (isUserAllowed(accessRule, user)) {
     log.info?.(`authorize: access granted to user ${user.username}`)

@@ -23,9 +23,9 @@ import type {
 import { v4 as uuid } from 'uuid'
 
 import { asyncServer, AsyncServer } from './async-server'
-import { arrify, removeBy } from './utils'
+import { removeBy } from './utils'
 
-import type { ErrorResponse, TokenInfo } from '../../src/oauth'
+import type { IntrospectionResponse } from '../../src/oauth'
 
 
 export interface OAuthOptions extends AuthorizeOptions, TokenOptions {
@@ -154,30 +154,30 @@ const router = new Router<void, AppContext>()
     ctx.body = response.body
     ctx.status = response.status!
   })
-  .post('/oauth/check_token', async ctx => {
-    if (!ctx.query.token) {
-      ctx.throw("Required query parameter 'token' is missing", 400)
+  .post('/oauth/introspect', async ctx => {
+    // TODO: Require Authorization.
+    const token = (ctx.request.body as any)?.token
+
+    if (!token) {
+      ctx.throw("Required form parameter 'token' is missing", 400)
     }
-    const accessToken = await ctx.oauthModel.getAccessToken(ctx.query.token as string)
+    const accessToken = await ctx.oauthModel.getAccessToken(token as string)
 
     if (accessToken) {
-      const tokenInfo: TokenInfo = {
+      const { scope } = accessToken
+      const body: IntrospectionResponse = {
+        active: true,
         client_id: accessToken.client.id,
-        scope: arrify(accessToken.scope),
+        scope: typeof scope === 'string' ? scope : scope?.join(',')!,
         exp: accessToken.accessTokenExpiresAt!.getTime(),
-        user_name: accessToken.user.id,
+        username: accessToken.user.id,
       }
-      ctx.body = tokenInfo
-      ctx.status = 200
-
+      ctx.body = body
     } else {
-      const error: ErrorResponse = {
-        error: 'invalid_token',
-        error_description: 'Token was not recognised',
-      }
-      ctx.body = error
-      ctx.status = 400
+      const body: Partial<IntrospectionResponse> = { active: false }
+      ctx.body = body
     }
+    ctx.status = 200
   })
 
 

@@ -6,6 +6,7 @@ import { parseConf, startNginx, NginxServer, PatchOperation } from 'nginx-testin
 import 'anylogger-loglevel'
 import LogLevel from 'loglevel'
 
+import assert from './assert'
 import { AsyncServer } from './async-server'
 import { createClient, HttpClient, Response } from './http-client'
 import { createServer as createOAuthServer, OAuthOptions } from './oauth-server'
@@ -128,6 +129,12 @@ export function useOAuthServer (opts: Partial<OAuthOptions> = {}): void {
           scopes: ['any'],
           redirectUris: [`${this.proxyUrl}/-/oauth/callback`],
         },
+        {
+          id: 'resource-provider',
+          secret: 'top-secret',
+          grants: ['client_credentials'],
+          scopes: [],
+        },
       ],
       accessTokenLifetime: 3600,
       refreshTokenLifetime: 720,
@@ -148,8 +155,13 @@ export function useResourceProvider (): void {
   before(async function () {
     const port = this.nginx.ports[2]
 
+    const oauthClient = this.oauthServerOpts.clients.find(o => o.id === 'resource-provider')
+    assert(oauthClient, "OAuth client 'resource-provider' not found")
+
     const opts: RPOptions = {
-      checkTokenUrl: `${this.oauthServerUrl}/check_token`,
+      introspectionUrl: `${this.oauthServerUrl}/introspect`,
+      clientId: oauthClient.id,
+      clientSecret: oauthClient.secret,
     }
 
     server = await createRPServer(opts).listenAsync(port)

@@ -9,11 +9,13 @@ import LogLevel from 'loglevel'
 import { asyncServer, AsyncServer } from './async-server'
 import { createClient } from './http-client'
 
-import type { ErrorResponse, TokenInfo } from '../../src/oauth'
+import type { IntrospectionResponse } from '../../src/oauth'
 
 
 export interface RPOptions {
-  checkTokenUrl: string
+  introspectionUrl: string
+  clientId: string
+  clientSecret: string
 }
 
 interface AppContext extends Koa.Context {
@@ -23,7 +25,7 @@ interface AppContext extends Koa.Context {
 const log = LogLevel.getLogger('resource-provider')
 
 const oauthAuthenticator = (opts: RPOptions): Middleware<{}, AppContext> => {
-  const url = new URL(opts.checkTokenUrl)
+  const url = new URL(opts.introspectionUrl)
   const realm = url == null ? '' : `${url.protocol}//${url.host}`
   const client = createClient()
 
@@ -35,15 +37,18 @@ const oauthAuthenticator = (opts: RPOptions): Middleware<{}, AppContext> => {
     }
 
     log.debug(`Verifying token: ${token}`)
-    const resp = await client.post(`${opts.checkTokenUrl}?token=${token}`, {
+    const resp = await client.post(opts.introspectionUrl, {
+      form: { token },
       responseType: 'json',
       throwHttpErrors: false,
+      username: opts.clientId,
+      password: opts.clientSecret,
     })
-    const data = resp.body as TokenInfo | ErrorResponse
+    const data = resp.body as IntrospectionResponse
 
-    if (resp.statusCode === 400 && 'error' in data && data.error === 'invalid_token') {
+    if (!data.active) {
       ctx.set('WWW-Authenticate', `Bearer realm=${realm}, error=invalid_token`)
-      throw createError(401, data.error_description ?? 'Invalid access token')
+      throw createError(401, 'Invalid access token')
     }
     if (resp.statusCode !== 200 || !('client_id' in data)) {
       throw createError(503, 'Unable to verify access token')

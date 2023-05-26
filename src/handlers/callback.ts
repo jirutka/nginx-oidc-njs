@@ -53,8 +53,8 @@ export const callback: RequestHandler = async (ctx) => {
   log.debug?.(`callback: received access_token=${token.access_token}, refresh_token=${token.refresh_token}`)
 
   // NOTE: The only reason why we call verifyToken here is to get username.
-  const { user_name } = await oauth.verifyToken(ctx, token.access_token)
-  log.info?.(`callback: received tokens for user ${user_name}`)
+  const { username } = await oauth.verifyToken(ctx, token.access_token)
+  log.info?.(`callback: received tokens for user ${username}`)
 
   const refreshTokenEnc = uuidCrypto.encrypt(token.refresh_token!, conf.cookieCipherKey)
 
@@ -62,7 +62,7 @@ export const callback: RequestHandler = async (ctx) => {
     'Set-Cookie': [
       formatCookie(Cookie.AccessToken, token.access_token, token.expires_in - 60, conf),
       formatCookie(Cookie.RefreshToken, refreshTokenEnc, conf.cookieMaxAge, conf, 'HttpOnly'),
-      formatCookie(Cookie.Username, user_name, conf.cookieMaxAge, conf),
+      formatCookie(Cookie.Username, username, conf.cookieMaxAge, conf),
       clearStateCookie,
     ],
   })

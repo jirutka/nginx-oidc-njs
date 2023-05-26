@@ -13,9 +13,9 @@ export const auth_access: RequestHandler = async (ctx) => {
 
   if (accessToken) {
     log.debug?.(`authorize: verifying access token: ${accessToken}`)
-    const token = await oauth.verifyToken(ctx, accessToken)
+    const { username } = await oauth.verifyToken(ctx, accessToken)
 
-    log.info?.(`authorize: access granted to user ${token.user_name}`)
+    log.info?.(`authorize: access granted to user ${username}`)
     return send(204)
 
   } else if (refreshToken) {
