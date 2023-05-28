@@ -9,13 +9,14 @@ import LogLevel from 'loglevel'
 import assert from './assert'
 import { AsyncServer } from './async-server'
 import { createClient, HttpClient, Response } from './http-client'
-import { createServer as createOAuthServer, OAuthOptions } from './oauth-server'
+import { createOAuthServer, OAuth2Server, OAuthOptions } from './oauth-server'
 import { parseNgxOAuthConfig, NgxOAuthConfig } from './ngx-oauth-config'
 import { createServer as createRPServer, RPOptions } from './resource-provider'
 
 
 declare module 'mocha' {
   export interface Context {
+    oauthServer?: OAuth2Server['service']
     oauthServerOpts: OAuthOptions
     oauthServerUrl: string
     proxyUrl: string
@@ -114,17 +115,17 @@ export function patchNginxConfig (patch: PatchOperation[]): void {
 }
 
 export function useOAuthServer (opts: Partial<OAuthOptions> = {}): void {
-  let server: AsyncServer
+  let server: OAuth2Server | undefined
 
   before(async function () {
     const oauthPort = this.nginx.ports[1]
-    this.oauthServerUrl = `http://127.0.0.1:${oauthPort}/oauth`
+    this.oauthServerUrl = `http://127.0.0.1:${oauthPort}`
 
     this.oauthServerOpts = {
       clients: [
         {
-          id: '16fba2aa-33fc-4066-a449-3169e637dfbc',
-          secret: '8ykAbAlSCzUXKFRtSZBlhe8HaKMipjhc',
+          id: 'oauth-proxy',
+          secret: 'top-secret',
           grants: ['authorization_code', 'refresh_token'],
           scopes: ['any'],
           redirectUris: [`${this.proxyUrl}/-/oauth/callback`],
@@ -136,16 +137,18 @@ export function useOAuthServer (opts: Partial<OAuthOptions> = {}): void {
           scopes: [],
         },
       ],
-      accessTokenLifetime: 3600,
-      refreshTokenLifetime: 720,
       ...opts,
     }
 
-    server = await createOAuthServer(this.oauthServerOpts).listenAsync(oauthPort)
+    server = await createOAuthServer(this.oauthServerOpts)
+    await server.start(oauthPort, '127.0.0.1')
+
+    this.oauthServer = server.service
   })
 
-  after(async () => {
-    await server.forceShutdownAsync()
+  after(async function () {
+    await server?.stop()
+    this.oauthServer = server = undefined
   })
 }
 

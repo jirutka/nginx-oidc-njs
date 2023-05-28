@@ -1,6 +1,7 @@
 import assert from './support/assert'
 import { useOAuthServer } from './support/hooks'
 import { describe, useSharedSteps } from './support/mocha'
+import * as oauth from './support/oauth-server'
 import { hashCsrf } from './support/utils'
 import commonSteps from './steps'
 
@@ -81,11 +82,11 @@ describe('Login', () => {
       })
 
       and(`set cookie ${CookieName.AccessToken}`, (ctx) => {
-        const { client: { cookies }, oauthServerOpts, ngxOAuthConfig } = ctx
+        const { client: { cookies }, ngxOAuthConfig } = ctx
 
         assert.includes(cookies.get(CookieName.AccessToken), {
           path: ngxOAuthConfig.cookiePath,
-          maxAge: oauthServerOpts.accessTokenLifetime! - 60,
+          maxAge: oauth.accessTokenLifetime - 60,
           httpOnly: undefined,
           secure: true,
         })
@@ -106,7 +107,7 @@ describe('Login', () => {
           maxAge: ngxOAuthConfig.cookieMaxAge,
           httpOnly: undefined,
           secure: true,
-          value: 'flynn'
+          value: oauth.userId,
         })
       })
     })

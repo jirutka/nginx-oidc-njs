@@ -20,3 +20,13 @@ export function removeBy <T> (array: T[], predicate: (item: T) => boolean): numb
 export function hashCsrf (value: string): string {
   return crypto.createHash('sha256').update(value).digest('hex')
 }
+
+export function parseBasicAuthHeader (value: string): { username: string, password: string } | null {
+  if (!value.startsWith('Basic ')) {
+    return null
+  }
+  const decoded = Buffer.from(value.slice('Basic '.length), 'base64').toString()
+  const [username, password] = decoded.split(':', 2)
+
+  return { username, password }
+}

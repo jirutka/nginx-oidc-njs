@@ -115,6 +115,8 @@ async function getValidAuthCode ({ client, oauthServerOpts: oauthOpts, oauthServ
       client_id: oauth.id,
       redirect_uri: oauth.redirectUris![0],
       state: csrfToken,
+      // XXX: This can be removed after https://github.com/axa-group/oauth2-mock-server/pull/241 is merged.
+      scope: 'dummy',
     }),
   })
 

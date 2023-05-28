@@ -1,202 +1,234 @@
-import http from 'node:http'
+import { urlencoded } from 'body-parser'
+import type { Request } from 'express'
+import { Events, MutableRedirectUri, MutableResponse, OAuth2Server, Payload } from 'oauth2-mock-server'
 
-import Router from '@koa/router'
-import Koa from 'koa'
-import bodyParser from 'koa-bodyparser'
-import LogLevel from 'loglevel'
-import OAuth2Server, {
-  AccessDeniedError,
-  OAuthError, Request as OAuthRequest,
-  Response as OAuthResponse,
-} from 'oauth2-server'
-import type {
-  AuthorizationCode,
-  AuthorizationCodeModel,
-  AuthorizeOptions,
-  Client as BaseClient,
-  RefreshToken,
-  RefreshTokenModel,
-  Token,
-  TokenOptions,
-  User,
-} from 'oauth2-server'
-import { v4 as uuid } from 'uuid'
-
-import { asyncServer, AsyncServer } from './async-server'
-import { removeBy } from './utils'
-
-import type { IntrospectionResponse } from '../../src/oauth'
+import assert from './assert'
+import { parseBasicAuthHeader } from './utils'
 
 
-export interface OAuthOptions extends AuthorizeOptions, TokenOptions {
+export type { OAuth2Server }
+
+export interface OAuthOptions {
   approveAuthorizationRequests?: boolean
   clients: OAuthClient[]
-  newAccessTokens?: string[]  // TODO: remove?
-  newRefreshTokens?: string[]  // TODO: remove?
-  userId?: string
 }
 
-export interface OAuthClient extends BaseClient {
+interface OAuthClient {
+  id: string
+  redirectUris?: string[] | undefined
+  grants: string[]
   secret: string
   scopes: string[]
+  [key: string]: unknown
 }
 
-interface AppContext extends Koa.Context {
-  oauthServer: OAuth2Server
-  oauthModel: AuthorizationCodeModel & RefreshTokenModel
-  opts: OAuthOptions
+interface State {
+  issuedTokens: StoredToken[]
+  // { [<code>]: <client_id> }
+  authzCodes: Record<string, string>
 }
 
+interface StoredToken {
+  token_type: 'Bearer'
+  access_token: string
+  refresh_token?: string
+  id_token?: string
+  expires_in: number
+  scope: string
 
-const log = LogLevel.getLogger('oauth-server')
+  exp: number
+  username?: string
+  client_id: string
+}
 
-const createModel = (opts: OAuthOptions): AuthorizationCodeModel & RefreshTokenModel => {
-  const tokens: Token[] = []
-  const authorizationCodes: AuthorizationCode[] = []
-  const clients = opts.clients
-  const newAccessTokens = [...opts.newAccessTokens ?? []]
-  const newRefreshTokens = [...opts.newRefreshTokens ?? []]
+interface IntrospectionResponse {
+  active: boolean
+  scope: string
+  client_id: string
+  username?: string
+  exp: number
+}
 
-  return {
-    async saveToken (token, client, user) {
-      //console.warn(`saveToken: ${JSON.stringify(token)}`)
-      log.debug
-      token = { ...token, client, user }
-      tokens.push(token)
-      return token
-    },
-    async getAccessToken (accessToken) {
-      //console.warn(`getAccessToken: ${accessToken}`)
-      return tokens.find(token => token.accessToken === accessToken)
-    },
-    async getRefreshToken (refreshToken) {
-      return tokens.find(token => token.refreshToken === refreshToken) as RefreshToken | undefined
-    },
-    async revokeToken (token) {
-      return removeBy(tokens, it => {
-        return it.accessToken === token.accessToken
-            || it.refreshToken != null && it.refreshToken === token.refreshToken
-      }) > 0
-    },
-    async saveAuthorizationCode (code, client, user) {
-      if (opts.approveAuthorizationRequests === false) {
-        throw new AccessDeniedError('Access denied: user denied access to application')
-      }
+// Must be the same as in oauth2-mock-server.
+export const accessTokenLifetime = 3600
+export const userId = 'johndoe'
 
-      //console.warn(`saveAuthorizationCode: ${code.authorizationCode}`)
-      const authCode: AuthorizationCode = { ...code, client, user }
-      authorizationCodes.push(authCode)
+export async function createOAuthServer (opts: OAuthOptions): Promise<OAuth2Server> {
+  const server = new OAuth2Server()
 
-      return authCode
-    },
-    async getAuthorizationCode (authorizationCode) {
-      //console.warn(`getAuthorizationCode: ${authorizationCode}`)
-      return authorizationCodes.find(code => code.authorizationCode === authorizationCode)
-    },
-    async revokeAuthorizationCode (code) {
-      return removeBy(authorizationCodes, it => it.authorizationCode === code.authorizationCode) > 0
-    },
-    async getClient (clientId, clientSecret) {
-      //console.warn(`getClient: ${clientId}, ${clientSecret}`)
-      return clients.find(entry => entry.id === clientId && clientSecret === null || entry.secret === clientSecret)
-    },
-    async verifyScope (_token, _scope) {
-      //console.warn(`verifyScope: ${_token.accessToken} ${_scope}`)
-      return true
-    },
-    async generateAccessToken (_client, _user, _scope) {
-      return newAccessTokens.pop() ?? Promise.resolve(uuid())
-    },
-    async generateRefreshToken (_client, _user, _scope) {
-      return newRefreshTokens.pop() ?? Promise.resolve(uuid())
-    },
+  // Prepend urlencoded middleware needed for the introspect endpoint.
+  const { requestHandler  } = server.service
+  requestHandler.use(urlencoded({ extended: false }))
+  requestHandler._router.stack.unshift(requestHandler._router.stack.pop())
+
+  const state: State = {
+    issuedTokens: [],
+    authzCodes: {},
+  }
+
+  server.service
+    .on(Events.BeforeAuthorizeRedirect, AuthorizeRedirectListener(opts, state))
+    .on(Events.BeforeResponse, TokenResponseListener(opts, state))
+    .on(Events.BeforeIntrospect, IntrospectListener(opts, state))
+
+  await server.issuer.keys.generate('RS256')
+
+  return server
+}
+
+// Listener for the authorization endpoint.
+const AuthorizeRedirectListener = (opts: OAuthOptions, state: State) => (
+  redirectUri: MutableRedirectUri,
+  req: Request,
+) => {
+  const { searchParams } = redirectUri.url
+  const { client_id } = req.query
+
+  const sendError = (code: string, desc: string) => {
+    searchParams.delete('code')
+    searchParams.delete('scope')
+    searchParams.set('error', code)
+    searchParams.set('error_description', desc)
+  }
+
+  if (typeof client_id !== 'string') {
+    return sendError('invalid_request', 'Missing client_id.')
+  }
+  if (!opts.clients.some(o => o.id === client_id)) {
+    return sendError('unauthorized_client', 'Unknown client_id.')
+  }
+  if (opts.approveAuthorizationRequests === false) {
+    return sendError('access_denied', 'The resource owner denied the request.')
+  }
+
+  if (!searchParams.has('error')) {
+    const code = searchParams.get('code')
+    assert(typeof code === 'string')
+
+    state.authzCodes[code] = client_id
   }
 }
 
-const router = new Router<void, AppContext>()
-  .get('/', ctx => {
-    ctx.status = 200
-  })
-  .get('/oauth/authorize', async ctx => {
-    //console.warn('authorize...')
-    const request = new OAuthRequest(ctx.request)
-    const response = new OAuthResponse(ctx.response)
+// Listener for the token endpoint.
+const TokenResponseListener = (opts: OAuthOptions, state: State) => (
+  res: MutableResponse,
+  req: Request,
+) => {
+  const sendError = (status: number, code: string, desc: string) => {
+    res.statusCode = status
+    res.body = {
+      error: code,
+      error_description: desc,
+    }
+  }
 
-    try {
-      await ctx.oauthServer.authorize(request, response, {
-        authenticateHandler: {
-          handle: (): User => ({ id: ctx.opts.userId || 'flynn' }),
-        },
-      })
-    } catch (err) {
-      if (!(err instanceof OAuthError)) {
-        throw err
+  const auth = parseBasicAuthHeader(req.headers.authorization ?? '')
+  if (!auth) {
+    return sendError(401, 'invalid_client', 'Missing Authorization header.')
+  }
+
+  const client = opts.clients.find(o => o.id === auth.username && o.secret === auth.password)
+  if (!client) {
+    return sendError(401, 'invalid_client', 'Wrong client_id or client_secret.')
+  }
+
+  const { code, grant_type } = req.body
+  if (!client.grants.includes(grant_type)) {
+    return sendError(400, 'unauthorized_client',
+      `Grant type ${grant_type} is not allowed for this client.`)
+  }
+  switch (grant_type) {
+    case 'authorization_code': {
+      if (typeof code !== 'string') {
+        return sendError(400, 'invalid_request', 'Missing code parameter.')
+      }
+      if (state.authzCodes[code] !== auth.username) {
+        return sendError(400, 'invalid_grant', 'Invalid authorization code.')
+      }
+      break
+    }
+    case 'refresh_token': {
+      const { refresh_token } = req.body
+      if (typeof refresh_token !== 'string') {
+        return sendError(400, 'invalid_request', 'Missing refresh_token parameter.')
+      }
+      if (!state.issuedTokens.some(o => o.refresh_token === refresh_token)) {
+        return sendError(400, 'invalid_grant', 'Invalid refresh token.')
       }
     }
+    break
+  }
 
-    ctx.set(response.headers!)
-    ctx.body = response.body
-    ctx.status = response.status!
-  })
-  .post('/oauth/token', async ctx => {
-    const request = new OAuthRequest(ctx.request)
-    const response = new OAuthResponse(ctx.response)
+  if (res.statusCode === 200 && typeof res.body === 'object') {
+    const id_token = res.body.id_token as string
+    const expires_in = res.body.expires_in as number
 
-    try {
-      await ctx.oauthServer.token(request, response)
-    } catch (err) {
-      if (!(err instanceof OAuthError)) {
-        throw err
-      }
+    const username = id_token && decodeJwtPayload(id_token).sub as string | undefined
+
+    state.issuedTokens.push({
+      ...res.body as any,
+      exp: timestamp() + expires_in,
+      client_id: auth.username,
+      username,
+    })
+    if (code) {
+      delete state.authzCodes[code]
     }
-
-    ctx.set(response.headers!)
-    ctx.body = response.body
-    ctx.status = response.status!
-  })
-  .post('/oauth/introspect', async ctx => {
-    // TODO: Require Authorization.
-    const token = (ctx.request.body as any)?.token
-
-    if (!token) {
-      ctx.throw("Required form parameter 'token' is missing", 400)
-    }
-    const accessToken = await ctx.oauthModel.getAccessToken(token as string)
-
-    if (accessToken) {
-      const { scope } = accessToken
-      const body: IntrospectionResponse = {
-        active: true,
-        client_id: accessToken.client.id,
-        scope: typeof scope === 'string' ? scope : scope?.join(',')!,
-        exp: accessToken.accessTokenExpiresAt!.getTime(),
-        username: accessToken.user.id,
-      }
-      ctx.body = body
-    } else {
-      const body: Partial<IntrospectionResponse> = { active: false }
-      ctx.body = body
-    }
-    ctx.status = 200
-  })
-
-
-function createApp (opts: OAuthOptions) {
-  const app = new Koa()
-    .use(bodyParser())
-    .use(router.routes())
-    .use(router.allowedMethods())
-
-  app.context.oauthModel = createModel(opts)
-  app.context.oauthServer = new OAuth2Server({
-    ...opts,
-    model: app.context.oauthModel
-  })
-  app.context.opts = opts
-
-  return app
+  }
 }
 
-export function createServer (config: OAuthOptions): AsyncServer {
-  return asyncServer(http.createServer(createApp(config).callback()))
+// Listener for the introspect endpoint.
+const IntrospectListener = (opts: OAuthOptions, state: State) => (
+  res: MutableResponse,
+  req: Request
+) => {
+  const auth = parseBasicAuthHeader(req.headers.authorization ?? '')
+  if (!auth) {
+    res.statusCode = 401
+    return
+  }
+  if (!opts.clients.some(o => o.id === auth.username && o.secret === auth.password)) {
+    res.statusCode = 403
+    return
+  }
+
+  if (req.get('Content-Type') !== 'application/x-www-form-urlencoded') {
+    res.statusCode = 415
+    return
+  }
+
+  const { token } = req.body
+  if (typeof token !== 'string') {
+    res.statusCode = 400
+    return
+  }
+
+  const storedToken = state.issuedTokens
+    .find(o => [o.access_token, o.refresh_token, o.id_token].includes(token))
+
+  const body = storedToken && storedToken.exp > timestamp()
+    ? createIntrospectionResponse(storedToken)
+    : { active: false }
+
+  res.statusCode = 200
+  res.body = body as Record<string, unknown>
 }
+
+const createIntrospectionResponse = (token: StoredToken): IntrospectionResponse => ({
+  active: true,
+  exp: token.exp,
+  scope: token.scope ?? '',
+  client_id: token.client_id,
+  username: token.username,
+})
+
+function decodeJwtPayload (jwt: string): Payload {
+  const parts = jwt.split('.')
+  if (parts.length !== 3) {
+    throw TypeError('Invalid Compact JWS')
+  }
+
+  return JSON.parse(Buffer.from(parts[1], 'base64url').toString())
+}
+
+const timestamp = () => Math.floor(Date.now() / 1000)
