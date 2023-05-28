@@ -1,6 +1,5 @@
 import got, { ExtendOptions, Got } from 'got'
 import { Cookie as ToughCookie, CookieJar as ToughCookieJar, Store } from 'tough-cookie'
-import { O } from 'ts-toolbelt'
 
 
 export type { Response } from 'got'
@@ -42,7 +41,7 @@ class CookieJar extends ToughCookieJar {
     return this.setCookieSync(cookie, currentUrl).toJSON() as Cookie
   }
 
-  setAll (cookies: O.Optional<Cookie, 'domain' | 'path'>[], currentUrl: string): Cookie[] {
+  setAll (cookies: Array<Pick<Cookie, 'key' | 'value'> & Partial<Cookie>>, currentUrl: string): Cookie[] {
     return cookies.map(cookie => this.set(cookie.key, cookie.value, currentUrl, cookie))
   }
 

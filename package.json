@@ -65,7 +65,6 @@
     "rollup": "^3.22.0",
     "rollup-plugin-add-git-msg": "^1.1.0",
     "tough-cookie": "^4.1.2",
-    "ts-toolbelt": "^9.6.0",
     "typescript": "~5.0.4"
   }
 }
