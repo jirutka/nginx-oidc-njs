@@ -1,7 +1,7 @@
 import type { RequestHandler } from '..'
 import { Cookie, CSRF_TOKEN_LENGTH } from '../constants'
 import * as oauth  from '../oauth'
-import { formatCookie, hashCsrfToken } from '../utils'
+import { extractUrlPath, formatCookie, hashCsrfToken } from '../utils'
 import * as uuidCrypto from '../uuid-crypto'
 
 
@@ -14,7 +14,9 @@ export const callback: RequestHandler = async (ctx) => {
   }
 
   const storedState = getCookie(Cookie.State, true)
-  const clearStateCookie = formatCookie(Cookie.State, '', 0, conf, 'HttpOnly')
+
+  const cookiePath = extractUrlPath(conf.redirectUri)
+  const clearStateCookie = formatCookie(Cookie.State, '', 0, { ...conf, cookiePath }, 'HttpOnly')
   const headers: NginxHeadersOut = { 'Set-Cookie': [clearStateCookie] }
 
   if (!storedState || storedState.length < CSRF_TOKEN_LENGTH) {

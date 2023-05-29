@@ -36,6 +36,15 @@ export function camelToSnake (str: string): string {
   return res
 }
 
+/**
+ * Returns the path component of the given `url`. It expects an URL with
+ * `http://` or `https://` schema or without schema and domain part. The query
+ * and fragment component is stripped.
+ */
+export function extractUrlPath (url: string): string {
+  return url.match(/^https?:\/\/[^/\s]+(\/[^?#\s]+)/)?.[1] ?? url
+}
+
 type FormatCookieOpts = {
   cookieAttrs?: string,
   cookiePath: string,

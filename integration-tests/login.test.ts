@@ -52,10 +52,10 @@ describe('Login', () => {
       then("the proxy should redirect me to $oauth_server_url/authorize")
 
       and(`should set ${CookieName.State} cookie with <csrfToken> and <originalUri>`, (ctx) => {
-        const { client: { cookies }, ngxOAuthConfig } = ctx
+        const { client: { cookies } } = ctx
 
         assert.includes(cookies.get(CookieName.State), {
-          path: ngxOAuthConfig.cookiePath,
+          path: '/-/oauth/callback',
           maxAge: 120,
           httpOnly: true,
           secure: true,

@@ -2,11 +2,10 @@ import qs from 'querystring'
 
 import type { RequestHandler } from '../'
 import { CSRF_TOKEN_LENGTH, Cookie } from '../constants'
-import { assert, formatCookie, hashCsrfToken, url } from '../utils'
+import { assert, extractUrlPath, formatCookie, hashCsrfToken, url } from '../utils'
 
 
 // TODO: Add nounce
-// TODO: Set Path in the state cookie to redirect_uri
 export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
   const requestUri = vars.request_uri
   const isUriRewritten = !requestUri?.startsWith(req.uri)
@@ -34,9 +33,12 @@ export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
     scope: conf.scope,
     state: hashCsrfToken(csrfToken),
   })
+  const state = `${csrfToken}:${originalUri}`
+  const cookiePath = extractUrlPath(conf.redirectUri)
+
   return send(303, authorizeUrl, {
     'Set-Cookie': [
-      formatCookie(Cookie.State, `${csrfToken}:${originalUri}`, 120, conf, 'HttpOnly'),
+      formatCookie(Cookie.State, state, 120, { ...conf, cookiePath }, 'HttpOnly'),
     ],
   })
 }

@@ -19,7 +19,10 @@ describe('Callback', () => {
   const { given, when, then, and } = useSharedSteps({
     ...commonSteps,
     "state cookie with a CSRF token is provided": ({ client, proxyUrl }) => {
-      client.cookies.set(Cookie.State, encodeURI(state), proxyUrl)
+      client.cookies.set(Cookie.State, encodeURI(state), proxyUrl, {
+        httpOnly: true,
+        path: '/-/oauth/callback',
+      })
     },
     "I make a GET request to the proxy's callback endpoint with query: {query}": async (ctx, query: string) => {
       ctx.resp = await ctx.client.get(`${ctx.proxyUrl}/-/oauth/callback?${query}`)
