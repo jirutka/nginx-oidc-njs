@@ -9,8 +9,9 @@ import LogLevel from 'loglevel'
 import assert from './assert'
 import { AsyncServer } from './async-server'
 import { createClient, HttpClient, Response } from './http-client'
-import { createOAuthServer, OAuth2Server, OAuthOptions } from './oauth-server'
+import { createNginxVarsHook, NginxVarsHook } from './nginx-vars-hook'
 import { parseNgxOAuthConfig, NgxOAuthConfig } from './ngx-oauth-config'
+import { createOAuthServer, OAuth2Server, OAuthOptions } from './oauth-server'
 import { createServer as createRPServer, RPOptions } from './resource-provider'
 
 
@@ -20,11 +21,15 @@ declare module 'mocha' {
     oauthServerOpts: OAuthOptions
     oauthServerUrl: string
     proxyUrl: string
-    nginx: NginxServer
+    nginx: NginxServerExt
     ngxOAuthConfig: NgxOAuthConfig,
     client: HttpClient
     resp: Response<string>
   }
+}
+
+interface NginxServerExt extends NginxServer {
+  variables: NginxVarsHook
 }
 
 const nginxVersion = process.env.NGINX_VERSION || '1.22.x'
@@ -39,17 +44,17 @@ export const mochaHooks: RootHookObject = {
     this.timeout(30_000)
 
     const host = '127.0.0.1'
-    this.nginx = await startNginx({ version: nginxVersion, bindAddress: host, configPath: nginxConfig })
+    const server = await startNginx({ version: nginxVersion, bindAddress: host, configPath: nginxConfig })
 
-    const errors = (await this.nginx.readErrorLog())
+    const errors = (await server.readErrorLog())
       .split('\n')
       .filter(line => line.includes('[error]'))
     if (errors) {
       console.error(errors.join('\n'))
     }
 
-    this.ngxOAuthConfig = parseNgxOAuthConfig(this.nginx.config)
-    this.proxyUrl = `https://${host}:${this.nginx.port}`
+    this.ngxOAuthConfig = parseNgxOAuthConfig(server.config)
+    this.proxyUrl = `https://${host}:${server.port}`
 
     this.client = createClient({
       followRedirect: false,
@@ -59,6 +64,14 @@ export const mochaHooks: RootHookObject = {
       retry: 0,
       throwHttpErrors: false,
     })
+
+    this.nginx = {
+      ...server,
+      variables: createNginxVarsHook(this.client, `${this.proxyUrl}/test-hook/variables`),
+    }
+
+    // Just verify that it works.
+    assert(await this.nginx.variables.get('nginx_version'))
 
     beforeEachSuite(async function () {
       this.client.cookies.clear()
