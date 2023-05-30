@@ -5,7 +5,7 @@ import * as oauth from './support/oauth-server'
 import { hashCsrf } from './support/utils'
 import commonSteps from './steps'
 
-import { Cookie as CookieName } from '../src/constants'
+import { Cookie as CookieName, Session } from '../src/constants'
 
 
 // Note: This tests also the callback handler.
@@ -29,13 +29,13 @@ describe('Login', () => {
   describe('using GET method', () => {
     useOAuthServer()
 
-    given("I'm not logged in (no cookies are set)")
+    given("I'm not logged in (no session and cookies exist)")
 
     when("I make a GET request to proxy {path}", '/-/oauth/login')
 
     then("the response status should be {status}", 405)
 
-    and("no OAuth cookies should be set")
+    and("no session variables and OAuth cookies should be set")
   })
 
   describe('using POST method', () => {
@@ -43,7 +43,7 @@ describe('Login', () => {
     describe('allow authorization', () => {
       useOAuthServer()
 
-      given("I'm not logged in (no cookies are set)")
+      given("I'm not logged in (no session and cookies exist)")
 
       when("I make a POST request to the proxy's login endpoint with query <originalUri>", async (ctx) => {
         ctx.resp = await ctx.client.post(`${ctx.proxyUrl}/-/oauth/login?original_uri=${originalUri}`)
@@ -90,15 +90,6 @@ describe('Login', () => {
         })
       })
 
-      and(`set cookie ${CookieName.RefreshToken}`, ({ client: { cookies }, ngxOAuthConfig }) => {
-        assert.includes(cookies.get(CookieName.RefreshToken), {
-          path: ngxOAuthConfig.cookiePath,
-          maxAge: ngxOAuthConfig.cookieMaxAge,
-          httpOnly: true,
-          secure: true,
-        })
-      })
-
       and(`set cookie ${CookieName.SessionId}`, ({ client: { cookies }, ngxOAuthConfig }) => {
         assert.includes(cookies.get(CookieName.SessionId), {
           path: ngxOAuthConfig.cookiePath,
@@ -117,6 +108,8 @@ describe('Login', () => {
           value: oauth.userId,
         })
       })
+
+      and("session variable {varName} should be set", Session.RefreshToken)
     })
 
 
@@ -125,7 +118,7 @@ describe('Login', () => {
         approveAuthorizationRequests: false,
       })
 
-      given("I'm not logged in (no cookies are set)")
+      given("I'm not logged in (no session and cookies exist)")
 
       when("I make a POST request to proxy {path}", '/-/oauth/login')
 
@@ -145,7 +138,7 @@ describe('Login', () => {
 
       then("the response status should be {status}", 403)
 
-      and("no OAuth cookies should be set")
+      and("no session variables and OAuth cookies should be set")
     })
   })
 })

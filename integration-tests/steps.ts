@@ -2,19 +2,24 @@ import assert from './support/assert'
 import { defineSteps } from './support/shared-steps'
 
 
-const oauthCookies = ['oauth_access_token', 'oauth_refresh_token', 'oauth_username', 'oidc_session_id'] as const
+const oauthCookies = ['oauth_access_token', 'oauth_username', 'oidc_session_id'] as const
+const sessionVariables = ['oidc_refresh_token'] as const
 
 export default defineSteps({
-  "I'm not logged in (no cookies are set)": ({ client }) => {
+  "I'm not logged in (no session and cookies exist)": ({ client, nginx }) => {
     client.cookies.clear()
+    nginx.variables.clear(sessionVariables)
   },
-  "I'm logged in and all cookies are set": async ({ client, proxyUrl }) => {
+  "I'm logged in (session and cookies are set)": async ({ client, nginx, proxyUrl }) => {
     client.cookies.clear()
 
     await client.post(`${proxyUrl}/-/oauth/login`, { followRedirect: true })
 
     for (const cookieName of oauthCookies) {
       assert(client.cookies.get(cookieName))
+    }
+    for (const varName of sessionVariables) {
+      assert(await nginx.variables.get(varName))
     }
   },
   "I follow the redirect": async (ctx) => {
@@ -36,9 +41,15 @@ export default defineSteps({
   "cookie {cookieName} should be cleared": ({ client }, cookieName: string) => {
     assert(!client.cookies.get(cookieName)?.maxAge)
   },
-  "no OAuth cookies should be set": ({ client }) => {
+  "session variable {varName} should be set": async ({ nginx }, varName: string) => {
+    assert(await nginx.variables.get(varName))
+  },
+  "no session variables and OAuth cookies should be set": async ({ client, nginx }) => {
     for (const cookieName of oauthCookies) {
       assert(!client.cookies.get(cookieName))
+    }
+    for (const varName of sessionVariables) {
+      assert(!await nginx.variables.get(varName))
     }
   },
 })

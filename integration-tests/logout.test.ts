@@ -13,7 +13,7 @@ describe('Logout', () => {
   useOAuthServer()
 
   describe('using GET method', () => {
-    given("I'm logged in and all cookies are set")
+    given("I'm logged in (session and cookies are set)")
 
     when("I make a GET request to proxy {path}", '/-/oauth/logout')
 
@@ -23,7 +23,7 @@ describe('Logout', () => {
   describe('using POST method', () => {
 
     describe('with nextUri', () => {
-      given("I'm logged in and all cookies are set")
+      given("I'm logged in (session and cookies are set)")
 
       when("I make a POST request to the proxy's logout endpoint with query <nextUri>", async (ctx) => {
         ctx.resp = await ctx.client.post(`${ctx.proxyUrl}/-/oauth/logout?nextUri=${nextUri}`)
@@ -36,11 +36,11 @@ describe('Logout', () => {
 
       when("I follow the redirect")
 
-      then("no OAuth cookies should be set")
+      then("no session variables and OAuth cookies should be set")
     })
 
     describe('without nextUri', () => {
-      given("I'm logged in and all cookies are set")
+      given("I'm logged in (session and cookies are set)")
 
       when("I make a POST request to proxy {path}", '/-/oauth/logout')
 
@@ -51,7 +51,7 @@ describe('Logout', () => {
 
       when("I follow the redirect")
 
-      then("no OAuth cookies should be set")
+      then("no session variables and OAuth cookies should be set")
     })
   })
 })

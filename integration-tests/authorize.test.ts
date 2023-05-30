@@ -23,7 +23,7 @@ describe('Authorize', () => {
   describe('with no access token', () => {
 
     describe('with no refresh token', () => {
-      given("I'm not logged in (no cookies are set)")
+      given("I'm not logged in (no session and cookies exist)")
 
       when("I make a request to a secured page")
 
@@ -33,20 +33,8 @@ describe('Authorize', () => {
       })
     })
 
-    describe('with an invalid refresh token that cannot be decrypted', () => {
-      given("I have an invalid refresh token", ({ client, proxyUrl }) => {
-        client.cookies.set(Cookie.RefreshToken, 'unknown-token', proxyUrl)
-      })
-
-      when("I make a request to a secured page")
-
-      then("the response status should be {status}", 403)
-
-      and("cookie {cookieName} should be cleared", Cookie.RefreshToken)
-    })
-
     describe('with a valid refresh token', () => {
-      given("I'm logged in and all cookies are set")
+      given("I'm logged in (session and cookies are set)")
 
       and("access token has expired", (ctx) => {
         ctx.client.cookies.remove(Cookie.AccessToken)
@@ -75,7 +63,7 @@ describe('Authorize', () => {
 
 
   describe('with a valid access token', () => {
-    given("I'm logged in and all cookies are set")
+    given("I'm logged in (session and cookies are set)")
 
     when("I make a request to a secured page")
 

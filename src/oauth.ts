@@ -1,9 +1,8 @@
 import qs from 'querystring'
 
 import type { Context } from './'
-import { Cookie } from './constants'
+import { Cookie, Session } from './constants'
 import { reject } from './error'
-import * as uuidCrypto from './uuid-crypto'
 import { formatCookie, parseJsonBody } from './utils'
 
 
@@ -76,11 +75,12 @@ export async function requestToken (ctx: Context, grantType: GrantType, value: s
       const data = parseJsonBody(responseText) as ErrorResponse
 
       if (data.error === 'invalid_grant') {
-        return grantType === 'refresh_token'
-          ? reject(401, 'Invalid Refresh Token', data.error_description, {
-              'Set-Cookie': [formatCookie(Cookie.RefreshToken, '', 0, conf)],
-            })
-          : reject(401, 'Invalid Authorization Code', data.error_description)
+        if (grantType === 'refresh_token') {
+          ctx.vars[Session.RefreshToken] = undefined
+          return reject(401, 'Invalid Refresh Token', data.error_description)
+        } else {
+          return reject(401, 'Invalid Authorization Code', data.error_description)
+        }
       } else {
         return reject(500, 'OAuth Configuration Error',
           `OAuth server returned error: ${data.error_description} (${data.error}).`
@@ -114,20 +114,10 @@ function isTokenResponse(obj: unknown): obj is TokenResponse {
 }
 
 /**
- * Requests a new access token using the given encrypted refresh token.
+ * Requests a new access token using the given refresh token.
  */
-export async function refreshToken (ctx: Context, encryptedRefreshToken: string): Promise<TokenResponse> {
-  const { conf } = ctx
-
-  const refreshToken = uuidCrypto.decrypt(encryptedRefreshToken, conf.cookieCipherKey)
-
-  if (refreshToken) {
-    return await requestToken(ctx, 'refresh_token', refreshToken)
-  } else {
-    return reject(403, 'Invalid Refresh Token', 'Unable to decrypt Refresh Token provided in cookie.', {
-      'Set-Cookie': [formatCookie(Cookie.RefreshToken, '', 0, conf)],
-    })
-  }
+export async function refreshToken (ctx: Context, refreshToken: string): Promise<TokenResponse> {
+  return requestToken(ctx, 'refresh_token', refreshToken)
 }
 
 /**

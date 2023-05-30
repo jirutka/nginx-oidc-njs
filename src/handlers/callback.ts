@@ -1,8 +1,7 @@
 import type { RequestHandler } from '..'
-import { Cookie, CSRF_TOKEN_LENGTH } from '../constants'
+import { Cookie, CSRF_TOKEN_LENGTH, Session } from '../constants'
 import * as oauth  from '../oauth'
 import { assert, extractUrlPath, formatCookie, hashCsrfToken } from '../utils'
-import * as uuidCrypto from '../uuid-crypto'
 
 
 export const callback: RequestHandler = async (ctx) => {
@@ -58,14 +57,12 @@ export const callback: RequestHandler = async (ctx) => {
   const { username } = await oauth.verifyToken(ctx, tokenSet.access_token)
   log.info?.(`callback: received tokens for user ${username}`)
 
-  const refreshTokenEnc = uuidCrypto.encrypt(tokenSet.refresh_token!, conf.cookieCipherKey)
-
   const sessionId = assert(vars.request_id, 'request_id is not set')
+  vars[`${Session.RefreshToken}_new`] = tokenSet.refresh_token!
 
   return send(303, originalUri, {
     'Set-Cookie': [
       formatCookie(Cookie.AccessToken, tokenSet.access_token, tokenSet.expires_in - 60, conf),
-      formatCookie(Cookie.RefreshToken, refreshTokenEnc, conf.cookieMaxAge, conf, 'HttpOnly'),
       formatCookie(Cookie.SessionId, sessionId, conf.cookieMaxAge, conf, 'HttpOnly'),
       formatCookie(Cookie.Username, username, conf.cookieMaxAge, conf),
       clearStateCookie,

@@ -24,7 +24,7 @@ describe('Proxy', () => {
 
 
   describe('with no tokens', () => {
-    given("I'm not logged in (no cookies are set)")
+    given("I'm not logged in (no session and cookies exist)")
 
     when("I make a request to a resource provider through the proxy")
 
@@ -37,7 +37,7 @@ describe('Proxy', () => {
 
 
   describe('with valid access token', () => {
-    given("I'm logged in and all cookies are set")
+    given("I'm logged in (session and cookies are set)")
 
     when("I make a request to a resource provider through the proxy")
 
@@ -46,7 +46,7 @@ describe('Proxy', () => {
 
 
   describe('with no access token and valid refresh token', () => {
-    given("I'm logged in and all cookies are set")
+    given("I'm logged in (session and cookies are set)")
 
     and("access token has expired", (ctx) => {
       ctx.client.cookies.remove(Cookie.AccessToken)

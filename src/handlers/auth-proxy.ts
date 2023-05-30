@@ -1,15 +1,15 @@
 import type { RequestHandler } from '..'
-import { Cookie } from '../constants'
+import { Cookie, Session } from '../constants'
 import * as oauth from '../oauth'
 import { formatCookie } from '../utils'
 
 
 export const auth_proxy: RequestHandler = async (ctx) => {
-  const { conf, getCookie, log, send } = ctx
+  const { conf, getCookie, log, send, vars } = ctx
   ctx.handlerType = 'auth_request'
 
   const accessToken = oauth.getRequestAccessToken(ctx)
-  const refreshToken = getCookie(Cookie.RefreshToken)
+  const refreshToken = vars[Session.RefreshToken]
 
   if (accessToken) {
     log.debug?.(`proxy: found access token: ${accessToken}`)

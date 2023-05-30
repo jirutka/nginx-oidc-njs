@@ -1,5 +1,5 @@
 import type { Context, RequestHandler } from '..'
-import { Cookie, VAR_SITE_ROOT_URI } from '../constants'
+import { Cookie, Session, VAR_SITE_ROOT_URI } from '../constants'
 import * as oauth from '../oauth'
 import { fetchUser } from '../user-api'
 import { assert, formatCookie } from '../utils'
@@ -40,7 +40,7 @@ export const auth_pages: RequestHandler = async (ctx) => {
   const accessRule = resolveAccessRule(config, branch, pagePath, conf.pagesFallbackPolicy)
 
   const accessToken = oauth.getRequestAccessToken(ctx)
-  const refreshToken = getCookie(Cookie.RefreshToken)
+  const refreshToken = vars[Session.RefreshToken]
 
   if (accessToken) {
     log.debug?.(`authorize: verifying access token: ${accessToken}`)

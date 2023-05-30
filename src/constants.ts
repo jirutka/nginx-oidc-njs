@@ -5,8 +5,11 @@ export const VAR_SITE_ROOT_URI = 'pages_site_root_uri'
 
 export const enum Cookie {
   AccessToken = 'oauth_access_token',
-  RefreshToken = 'oauth_refresh_token',
   State = 'oauth_state',
   Username = 'oauth_username',
   SessionId = 'oidc_session_id',
+}
+
+export const enum Session {
+  RefreshToken = 'oidc_refresh_token',
 }
