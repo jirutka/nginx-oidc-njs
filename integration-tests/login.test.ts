@@ -81,9 +81,7 @@ describe('Login', () => {
         assert(resp.headers.location!.endsWith(originalUri))
       })
 
-      and(`set cookie ${CookieName.AccessToken}`, (ctx) => {
-        const { client: { cookies }, ngxOAuthConfig } = ctx
-
+      and(`set cookie ${CookieName.AccessToken}`, ({ client: { cookies }, ngxOAuthConfig }) => {
         assert.includes(cookies.get(CookieName.AccessToken), {
           path: ngxOAuthConfig.cookiePath,
           maxAge: oauth.accessTokenLifetime - 60,
@@ -94,6 +92,15 @@ describe('Login', () => {
 
       and(`set cookie ${CookieName.RefreshToken}`, ({ client: { cookies }, ngxOAuthConfig }) => {
         assert.includes(cookies.get(CookieName.RefreshToken), {
+          path: ngxOAuthConfig.cookiePath,
+          maxAge: ngxOAuthConfig.cookieMaxAge,
+          httpOnly: true,
+          secure: true,
+        })
+      })
+
+      and(`set cookie ${CookieName.SessionId}`, ({ client: { cookies }, ngxOAuthConfig }) => {
+        assert.includes(cookies.get(CookieName.SessionId), {
           path: ngxOAuthConfig.cookiePath,
           maxAge: ngxOAuthConfig.cookieMaxAge,
           httpOnly: true,

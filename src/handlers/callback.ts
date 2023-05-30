@@ -1,12 +1,12 @@
 import type { RequestHandler } from '..'
 import { Cookie, CSRF_TOKEN_LENGTH } from '../constants'
 import * as oauth  from '../oauth'
-import { extractUrlPath, formatCookie, hashCsrfToken } from '../utils'
+import { assert, extractUrlPath, formatCookie, hashCsrfToken } from '../utils'
 import * as uuidCrypto from '../uuid-crypto'
 
 
 export const callback: RequestHandler = async (ctx) => {
-  const { conf, fail, getCookie, log, req, send } = ctx
+  const { conf, fail, getCookie, log, req, send, vars } = ctx
   const { code, error, state } = req.args
 
   if (!code && !error) {
@@ -60,10 +60,13 @@ export const callback: RequestHandler = async (ctx) => {
 
   const refreshTokenEnc = uuidCrypto.encrypt(token.refresh_token!, conf.cookieCipherKey)
 
+  const sessionId = assert(vars.request_id, 'request_id is not set')
+
   return send(303, originalUri, {
     'Set-Cookie': [
       formatCookie(Cookie.AccessToken, token.access_token, token.expires_in - 60, conf),
       formatCookie(Cookie.RefreshToken, refreshTokenEnc, conf.cookieMaxAge, conf, 'HttpOnly'),
+      formatCookie(Cookie.SessionId, sessionId, conf.cookieMaxAge, conf, 'HttpOnly'),
       formatCookie(Cookie.Username, username, conf.cookieMaxAge, conf),
       clearStateCookie,
     ],

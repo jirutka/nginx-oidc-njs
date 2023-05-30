@@ -8,4 +8,5 @@ export const enum Cookie {
   RefreshToken = 'oauth_refresh_token',
   State = 'oauth_state',
   Username = 'oauth_username',
+  SessionId = 'oidc_session_id',
 }

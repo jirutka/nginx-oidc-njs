@@ -2,7 +2,7 @@ import assert from './support/assert'
 import { defineSteps } from './support/shared-steps'
 
 
-const oauthCookies = ['oauth_access_token', 'oauth_refresh_token', 'oauth_username'] as const
+const oauthCookies = ['oauth_access_token', 'oauth_refresh_token', 'oauth_username', 'oidc_session_id'] as const
 
 export default defineSteps({
   "I'm not logged in (no cookies are set)": ({ client }) => {

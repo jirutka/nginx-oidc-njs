@@ -17,6 +17,7 @@ export const logout: RequestHandler = ({ conf, getCookie, log, req, send }) => {
     'Set-Cookie': [
       formatCookie(Cookie.AccessToken, '', 0, conf),  // delete cookie
       formatCookie(Cookie.RefreshToken, '', 0, conf),  // delete cookie
+      formatCookie(Cookie.SessionId, '', 0, conf),  // delete cookie
       formatCookie(Cookie.Username, '', 0, conf),  // delete cookie
     ],
   })
