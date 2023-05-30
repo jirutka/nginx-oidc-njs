@@ -51,20 +51,20 @@ export const callback: RequestHandler = async (ctx) => {
   }
   log.debug?.(`callback: requesting tokens using auth code: ${code}`)
 
-  const token = await oauth.requestToken(ctx, 'authorization_code', code)
-  log.debug?.(`callback: received access_token=${token.access_token}, refresh_token=${token.refresh_token}`)
+  const tokenSet = await oauth.requestToken(ctx, 'authorization_code', code)
+  log.debug?.(`callback: received access_token=${tokenSet.access_token}, refresh_token=${tokenSet.refresh_token}`)
 
   // NOTE: The only reason why we call verifyToken here is to get username.
-  const { username } = await oauth.verifyToken(ctx, token.access_token)
+  const { username } = await oauth.verifyToken(ctx, tokenSet.access_token)
   log.info?.(`callback: received tokens for user ${username}`)
 
-  const refreshTokenEnc = uuidCrypto.encrypt(token.refresh_token!, conf.cookieCipherKey)
+  const refreshTokenEnc = uuidCrypto.encrypt(tokenSet.refresh_token!, conf.cookieCipherKey)
 
   const sessionId = assert(vars.request_id, 'request_id is not set')
 
   return send(303, originalUri, {
     'Set-Cookie': [
-      formatCookie(Cookie.AccessToken, token.access_token, token.expires_in - 60, conf),
+      formatCookie(Cookie.AccessToken, tokenSet.access_token, tokenSet.expires_in - 60, conf),
       formatCookie(Cookie.RefreshToken, refreshTokenEnc, conf.cookieMaxAge, conf, 'HttpOnly'),
       formatCookie(Cookie.SessionId, sessionId, conf.cookieMaxAge, conf, 'HttpOnly'),
       formatCookie(Cookie.Username, username, conf.cookieMaxAge, conf),
