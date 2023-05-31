@@ -1,5 +1,6 @@
 import type { RequestHandler } from '..'
 import { Cookie, CSRF_TOKEN_LENGTH, Session } from '../constants'
+import { decodeAndValidateJwtClaims, IdToken, idTokenUsername, validateJwtSign } from '../jwt'
 import * as oauth  from '../oauth'
 import { assert, extractUrlPath, formatCookie, hashCsrfToken } from '../utils'
 
@@ -51,13 +52,22 @@ export const callback: RequestHandler = async (ctx) => {
   log.debug?.(`callback: requesting tokens using auth code: ${code}`)
 
   const tokenSet = await oauth.requestToken(ctx, 'authorization_code', code)
-  log.debug?.(`callback: received access_token=${tokenSet.access_token}, refresh_token=${tokenSet.refresh_token}`)
+  log.debug?.(`callback: received id_token=${tokenSet.id_token},`
+            + ` access_token=${tokenSet.access_token}, refresh_token=${tokenSet.refresh_token}`)
 
-  // NOTE: The only reason why we call verifyToken here is to get username.
-  const { username } = await oauth.verifyToken(ctx, tokenSet.access_token)
-  log.info?.(`callback: received tokens for user ${username}`)
+  if (!tokenSet.id_token) {
+    return fail(500, 'OAuth Configuration Error',
+      'OAuth server returned a token set without id_token.')
+  }
+
+  await validateJwtSign(ctx, tokenSet.id_token)
+  const claims = await decodeAndValidateJwtClaims(conf, tokenSet.id_token) as IdToken
+  const username = idTokenUsername(claims)
+
+  log.info?.(`callback: creating session for user ${username}`)
 
   const sessionId = assert(vars.request_id, 'request_id is not set')
+  vars[`${Session.IdToken}_new`] = tokenSet.id_token
   vars[`${Session.RefreshToken}_new`] = tokenSet.refresh_token!
 
   return send(303, originalUri, {

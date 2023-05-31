@@ -109,6 +109,8 @@ describe('Login', () => {
         })
       })
 
+      and("session variable {varName} should be set", Session.IdToken)
+
       and("session variable {varName} should be set", Session.RefreshToken)
     })
 

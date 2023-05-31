@@ -15,6 +15,18 @@ export interface HttpError {
 }
 
 /**
+ * Creates an `HttpError` object containing the given properties.
+ */
+export function HttpError (
+  status: number,
+  title: string,
+  detail?: string,
+  headers?: NginxHeadersOut,
+): HttpError {
+  return { status, title, detail, headers }
+}
+
+/**
  * Tests if the given `obj` is a `HttpError`, i.e. if it has `status` and `title`.
  */
 export function isHttpError (obj: any): obj is HttpError {

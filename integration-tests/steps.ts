@@ -3,7 +3,7 @@ import { defineSteps } from './support/shared-steps'
 
 
 const oauthCookies = ['oauth_access_token', 'oauth_username', 'oidc_session_id'] as const
-const sessionVariables = ['oidc_refresh_token'] as const
+const sessionVariables = ['oidc_id_token', 'oidc_refresh_token'] as const
 
 export default defineSteps({
   "I'm not logged in (no session and cookies exist)": ({ client, nginx }) => {

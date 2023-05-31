@@ -11,5 +11,6 @@ export const enum Cookie {
 }
 
 export const enum Session {
+  IdToken = 'oidc_id_token',
   RefreshToken = 'oidc_refresh_token',
 }

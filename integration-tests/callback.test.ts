@@ -1,12 +1,13 @@
+import * as FS from 'node:fs'
 import { URL, URLSearchParams } from 'node:url'
 
 import assert from './support/assert'
 import { useOAuthServer } from './support/hooks'
-import { before, describe, useSharedSteps } from './support/mocha'
+import { describe, useSharedSteps } from './support/mocha'
 import { hashCsrf } from './support/utils'
 import commonSteps from './steps'
 
-import { Cookie, CSRF_TOKEN_LENGTH } from '../src/constants'
+import { Cookie, CSRF_TOKEN_LENGTH, Session } from '../src/constants'
 
 
 describe('Callback', () => {
@@ -26,6 +27,10 @@ describe('Callback', () => {
     },
     "I make a GET request to the proxy's callback endpoint with query: {query}": async (ctx, query: string) => {
       ctx.resp = await ctx.client.get(`${ctx.proxyUrl}/-/oauth/callback?${query}`)
+    },
+    "I make a GET request to the proxy's callback endpoint with a valid 'code' and 'state'": async (ctx) => {
+      const code = await getValidAuthCode(ctx, csrfToken)
+      ctx.resp = await ctx.client.get(`${ctx.proxyUrl}/-/oauth/callback?code=${code}&state=${csrfTokenHash}`)
     },
   })
 
@@ -88,24 +93,42 @@ describe('Callback', () => {
     })
 
     describe('with a valid code', () => {
-      let code: string
-      before(async (ctx) => {
-        code = await getValidAuthCode(ctx, csrfToken)
-      })
-
       given("state cookie with a CSRF token is provided")
 
-      when("I make a GET request to the proxy's callback endpoint with a valid 'code' and 'state'", async (ctx) => {
-        ctx.resp = await ctx.client.get(`${ctx.proxyUrl}/-/oauth/callback?code=${code}&state=${csrfTokenHash}`)
-      })
+      when("I make a GET request to the proxy's callback endpoint with a valid 'code' and 'state'")
 
       then("the proxy should redirect me to <originalUri>", ({ resp }) => {
         assert(resp.headers.location!.endsWith(originalUri))
       })
 
-      // FIXME
+      and("session variable {varName} should be set", Session.IdToken)
+
+      and("session variable {varName} should be set", Session.RefreshToken)
     })
   })
+
+
+  describe('when OAAS returns invalid ID Token', () => {
+
+    describe('when ID Token is signed by a different key', () => {
+      given("OAAS unexpectedly changed its JWK key", async ({ oauthServer }) => {
+        // This JWK is different, but has the same 'kid' as the current one, so it will replace it.
+        const jwk = JSON.parse(FS.readFileSync(`${__dirname}/fixtures/jwk-wrong.json`, 'utf8'))
+        await oauthServer!.issuer.keys.add(jwk)
+      })
+
+      and("state cookie with a CSRF token is provided")
+
+      when("I make a GET request to the proxy's callback endpoint with a valid 'code' and 'state'")
+
+      then("the response status should be {status}", 401)
+
+      and("no session variables and OAuth cookies should be set")
+    })
+
+    // TODO: add more
+  })
+
 })
 
 
@@ -119,7 +142,7 @@ async function getValidAuthCode ({ client, oauthServerOpts: oauthOpts, oauthServ
       redirect_uri: oauth.redirectUris![0],
       state: csrfToken,
       // XXX: This can be removed after https://github.com/axa-group/oauth2-mock-server/pull/241 is merged.
-      scope: 'dummy',
+      scope: 'openid',
     }),
   })
 

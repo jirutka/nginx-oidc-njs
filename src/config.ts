@@ -4,9 +4,10 @@ import { parseLogLevel, LogLevel } from './logger'
 
 
 const configDescriptor = {
+  issuer: undefined,
   serverUrl: undefined,
   clientId: undefined,
-  scope: '',
+  scope: 'openid',
   redirectUri: '/-/oauth/callback',
   internalLocationsPrefix: '/-/internal',
   cookieAttrs: 'SameSite=Strict',

@@ -4,6 +4,21 @@ import qs from 'querystring'
 import type { ParsedUrlQueryInput } from 'querystring'
 
 
+type Arrify<T> = T extends (null | undefined) ? [] : T extends readonly unknown[] ? T : T[]
+
+/**
+ * @example
+ * arrify('foo')      //=> ['foo']
+ * arrify(['a', 'b']) //=> ['a', 'b']
+ * arrify(undefined)  //=> []
+ * arrify(null)       //=> []
+ */
+export function arrify <T> (value: T): Arrify<T> {
+  return value == null ? []
+    : Array.isArray(value) ? value
+    : [value] as any
+}
+
 /**
  * Tests if `value` is truthy and returns it. When it's not truthy, `Error` with `message`
  * is thrown.
@@ -178,6 +193,15 @@ export function hashCsrfToken (token: string): string {
 }
 
 /**
+ * Returns `true` if the given `value` represents a positive integer, i.e. it
+ * can be converted to an integer and it's `>= 1`.
+ */
+export function isPositiveInteger (value: unknown): boolean {
+  const num = Number(value)
+  return Number.isInteger(num) && num > 0
+}
+
+/**
  * Returns `true` if the `path` exists (i.e. it's a file or directory),
  * otherwise `false`.
  */
@@ -255,6 +279,11 @@ export function renderTemplate (template: string, params: Record<string, unknown
     (_, varName: string) => String(params[varName] ?? ''),
   )
 }
+
+/**
+ * Returns the current unix timestamp in seconds.
+ */
+export const timestamp = () => Math.floor(Date.now() / 1000)
 
 /**
  * Creates a null object with the given `keys` set to `true`.

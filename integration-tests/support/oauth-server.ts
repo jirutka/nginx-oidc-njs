@@ -1,6 +1,6 @@
 import { urlencoded } from 'body-parser'
 import type { Request } from 'express'
-import { Events, MutableRedirectUri, MutableResponse, OAuth2Server, Payload } from 'oauth2-mock-server'
+import { Events, JWK, MutableRedirectUri, MutableResponse, OAuth2Server, Payload } from 'oauth2-mock-server'
 
 import assert from './assert'
 import { parseBasicAuthHeader } from './utils'
@@ -11,6 +11,11 @@ export type { OAuth2Server }
 export interface OAuthOptions {
   approveAuthorizationRequests?: boolean
   clients: OAuthClient[]
+  jwks: JWKS
+}
+
+export interface JWKS {
+  keys: JWK[]
 }
 
 interface OAuthClient {
@@ -71,7 +76,9 @@ export async function createOAuthServer (opts: OAuthOptions): Promise<OAuth2Serv
     .on(Events.BeforeResponse, TokenResponseListener(opts, state))
     .on(Events.BeforeIntrospect, IntrospectListener(opts, state))
 
-  await server.issuer.keys.generate('RS256')
+  for (const jwk of opts.jwks.keys) {
+    await server.issuer.keys.add(jwk)
+  }
 
   return server
 }

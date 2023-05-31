@@ -3,7 +3,7 @@ import qs from 'querystring'
 import type { Context } from './'
 import { Cookie, Session } from './constants'
 import { reject } from './error'
-import { formatCookie, parseJsonBody } from './utils'
+import { formatCookie, parseJsonBody, timestamp } from './utils'
 
 
 /**
@@ -15,6 +15,8 @@ export interface TokenResponse {
   access_token: string
   /** The refresh token. */
   refresh_token?: string
+  /** The ID Token; this is present if the `openid` scope was requested. */
+  id_token?: string
   /** The lifetime in seconds of the access token. */
   expires_in: number
   /** A space-separated list of scopes associated with this token. */
@@ -47,7 +49,7 @@ export interface IntrospectionResponse {
 type GrantType = 'authorization_code' | 'refresh_token'
 
 /**
- * Requests a new access token using the specified grant.
+ * Requests new tokens using the specified grant.
  */
 export async function requestToken (ctx: Context, grantType: GrantType, value: string): Promise<TokenResponse> {
   const { conf, subrequest } = ctx
@@ -135,7 +137,7 @@ export async function verifyToken (
   ctx: Context,
   accessToken: string
 ): Promise<IntrospectionResponse> {
-  const { conf, vars } = ctx
+  const { conf } = ctx
 
   const token = await introspectToken(ctx, accessToken)
 
@@ -162,7 +164,7 @@ export async function verifyToken (
     return reject(403, 'Invalid Access Token',
       `Token does not have a username attached. Given token: ${accessToken}`)
   }
-  if (typeof token.exp !== 'number' || token.exp < parseInt(vars.msec!)) {
+  if (typeof token.exp !== 'number' || token.exp < timestamp()) {
     return reject(401, 'Invalid Access Token',
       `Token has expired at ${token.exp}. Given token: ${accessToken}.`,
       { 'Set-Cookie': [formatCookie(Cookie.AccessToken, '', 0, conf)] })

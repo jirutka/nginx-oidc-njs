@@ -11,7 +11,7 @@ import { AsyncServer } from './async-server'
 import { createClient, HttpClient, Response } from './http-client'
 import { createNginxVarsHook, NginxVarsHook } from './nginx-vars-hook'
 import { parseNgxOAuthConfig, NgxOAuthConfig } from './ngx-oauth-config'
-import { createOAuthServer, OAuth2Server, OAuthOptions } from './oauth-server'
+import { createOAuthServer, JWKS, OAuth2Server, OAuthOptions } from './oauth-server'
 import { createServer as createRPServer, RPOptions } from './resource-provider'
 
 
@@ -35,6 +35,7 @@ interface NginxServerExt extends NginxServer {
 const nginxVersion = process.env.NGINX_VERSION || '1.22.x'
 const nginxConfig = `${__dirname}/../nginx.conf`
 const certificate = FS.readFileSync(`${__dirname}/../fixtures/server.crt`)
+const jwks = JSON.parse(FS.readFileSync(`${__dirname}/../fixtures/jwks.json`, 'utf8')) as JWKS
 
 LogLevel.getLogger('nginx-binaries').setLevel('DEBUG')
 LogLevel.setDefaultLevel('DEBUG')
@@ -150,6 +151,7 @@ export function useOAuthServer (opts: Partial<OAuthOptions> = {}): void {
           scopes: [],
         },
       ],
+      jwks,
       ...opts,
     }
 

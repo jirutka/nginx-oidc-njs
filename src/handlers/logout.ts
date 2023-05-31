@@ -13,6 +13,7 @@ export const logout: RequestHandler = ({ conf, getCookie, log, req, send, vars }
 
   log.info?.(`logout: logging out user ${getCookie(Cookie.Username)}`)
 
+  vars[Session.IdToken] = undefined
   vars[Session.RefreshToken] = undefined
 
   return send(303, nextUri, {
