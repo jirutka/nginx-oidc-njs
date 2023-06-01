@@ -3,8 +3,6 @@ import fs from 'fs'
 import qs from 'querystring'
 import type { ParsedUrlQueryInput } from 'querystring'
 
-import type { HttpError } from './context'
-
 
 /**
  * Tests if `value` is truthy and returns it. When it's not truthy, `Error` with `message`
@@ -245,13 +243,6 @@ export function readJSON (filepath: string): unknown {
     err.message = `${filepath}: ${err.message}`
     throw err
   }
-}
-
-/**
- * Returns a rejected Promise with object containing the given properties.
- */
-export function reject (status: number, title: string, detail?: string, headers?: NginxHeadersOut): Promise<never> {
-  return Promise.reject({ status, title, detail, headers } as HttpError)
 }
 
 /**

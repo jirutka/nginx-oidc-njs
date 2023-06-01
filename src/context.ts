@@ -2,6 +2,7 @@ import qs from 'querystring'
 import type { ParsedUrlQueryInput } from 'querystring'
 
 import type { ConfigReader } from './config-reader'
+import { HttpError, isHttpError } from './error'
 import { createLogger, Logger, LoggerConfig } from './logger'
 
 
@@ -107,30 +108,6 @@ export interface Context<TConfig> {
   subrequest: (
     method: HttpMethod, locationUri: string, query?: QueryParams, body?: NjsStringLike,
   ) => Promise<NginxHTTPRequest>
-}
-
-/**
- * HTTP error response compatible with [RFC7807](https://tools.ietf.org/html/rfc7807).
- */
-export interface HttpError {
-  [key: string]: any
-
-  status: number
-  title: string
-  detail?: string
-  trackId?: string
-
-  /** @internal */
-  headers?: NginxHeadersOut
-}
-
-/**
- * Tests if the given `obj` is a `HttpError`, i.e. if it has `status` and `title`.
- */
-export function isHttpError (obj: any): obj is HttpError {
-  return typeof obj === 'object'
-    && typeof obj.status === 'number'
-    && typeof obj.title === 'string'
 }
 
 type BaseConfig = LoggerConfig & { [key: string]: any }

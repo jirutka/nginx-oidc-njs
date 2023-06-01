@@ -2,7 +2,7 @@ import fs from 'fs'
 import qs from 'querystring'
 
 import type { RequestHandler } from '../'
-import { HttpError, isHttpError } from '../context'
+import { HttpError, isHttpError } from '../error'
 import { renderTemplate, preferredMediaType } from '../utils'
 
 

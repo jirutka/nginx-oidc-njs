@@ -1,5 +1,6 @@
 import type { Context } from '.'
-import { parseJsonBody, reject } from './utils'
+import { reject } from './error'
+import { parseJsonBody } from './utils'
 
 
 export interface UserInfo {

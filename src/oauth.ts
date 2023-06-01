@@ -2,8 +2,9 @@ import qs from 'querystring'
 
 import type { Context } from './'
 import { Cookie } from './constants'
+import { reject } from './error'
 import * as uuidCrypto from './uuid-crypto'
-import { formatCookie, parseJsonBody, reject } from './utils'
+import { formatCookie, parseJsonBody } from './utils'
 
 
 /**
