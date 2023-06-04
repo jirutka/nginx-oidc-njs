@@ -3,7 +3,7 @@ import { useOAuthServer } from './support/hooks'
 import { describe, useSharedSteps } from './support/mocha'
 import commonSteps from './steps'
 
-import { Cookie } from '../src/constants'
+import { Cookie, Session } from '../src/constants'
 
 
 describe('Authorize', () => {
@@ -31,6 +31,24 @@ describe('Authorize', () => {
         assert(resp.statusCode === 303)
         assert(resp.headers.location!.split('?')[0] === `${oauthServerUrl}/authorize`)
       })
+    })
+
+    describe('with an invalid refresh token', () => {
+      given("I'm logged in (session and cookies are set)")
+
+      and("access token has expired", ({ client }) => {
+        client.cookies.remove(Cookie.AccessToken)
+      })
+
+      and("refresh token is invalid", async ({ nginx }) => {
+        await nginx.variables.set(Session.RefreshToken, 'invalid-refresh-token')
+      })
+
+      when("I make a request to a secured page")
+
+      then("the response status should be {status}", 401)
+
+      and("session variable {varName} should be cleared", Session.RefreshToken)
     })
 
     describe('with a valid refresh token', () => {

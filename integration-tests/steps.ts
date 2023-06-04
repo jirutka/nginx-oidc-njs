@@ -44,6 +44,9 @@ export default defineSteps({
   "session variable {varName} should be set": async ({ nginx }, varName: string) => {
     assert(await nginx.variables.get(varName))
   },
+  "session variable {varName} should be cleared": async ({ nginx }, varName: string) => {
+    assert(!await nginx.variables.get(varName))
+  },
   "no session variables and OAuth cookies should be set": async ({ client, nginx }) => {
     for (const cookieName of oauthCookies) {
       assert(!client.cookies.get(cookieName))
