@@ -5,7 +5,7 @@ import { decodeJwtPayload, shiftJwtTimes } from './support/oauth-server'
 import { timestamp } from './support/utils'
 import commonSteps from './steps'
 
-import { Cookie, Session } from '../src/constants'
+import { Session } from '../src/constants'
 
 
 describe('Authorize', () => {
@@ -64,7 +64,7 @@ describe('Authorize', () => {
 
       then("I should get the requested page")
 
-      and("the response should set cookie {cookieName}", Cookie.AccessToken)
+      and("session variable {varName} should be set", Session.AccessToken)
 
       and("session variable {varName} should be set", Session.IdToken)
     })
@@ -85,7 +85,7 @@ describe('Authorize', () => {
 
     then("I should get the requested page")
 
-    and("the response should set cookie {cookieName}", Cookie.AccessToken)
+    and("session variable {varName} should be set", Session.AccessToken)
 
     and(`session variable ${Session.IdToken} should be set to a fresh id token`, async ({ nginx }) => {
       const idToken = await nginx.variables.get(Session.IdToken)

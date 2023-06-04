@@ -2,7 +2,6 @@ import type { RequestHandler } from '..'
 import { Cookie, Session } from '../constants'
 import { decodeAndValidateJwtClaims, idTokenUsername, validateJwtSign } from '../jwt'
 import * as oauth from '../oauth'
-import { formatCookie } from '../utils'
 
 
 export const auth_access: RequestHandler = async (ctx) => {
@@ -32,13 +31,10 @@ export const auth_access: RequestHandler = async (ctx) => {
     await validateJwtSign(ctx, tokenSet.id_token)
     await decodeAndValidateJwtClaims(conf, tokenSet.id_token)
 
+    vars[Session.AccessToken] = tokenSet.access_token
     vars[Session.IdToken] = tokenSet.id_token
 
-    return send(204, undefined, {
-      'Set-Cookie': [
-        formatCookie(Cookie.AccessToken, tokenSet.access_token, tokenSet.expires_in - 60, conf),
-      ],
-    })
+    return send(204)
   }
 
   if (conf.accessAllowAnonymous) {

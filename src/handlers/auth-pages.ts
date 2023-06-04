@@ -2,7 +2,7 @@ import type { Context, RequestHandler } from '..'
 import { Cookie, Session, VAR_SITE_ROOT_URI } from '../constants'
 import * as oauth from '../oauth'
 import { fetchUser } from '../user-api'
-import { assert, formatCookie } from '../utils'
+import { assert } from '../utils'
 import {
   findSiteRootUri,
   isAnonymousAllowed,
@@ -48,15 +48,12 @@ export const auth_pages: RequestHandler = async (ctx) => {
 
   } else if (refreshToken) {
     log.info?.(`authorize: refreshing token for user ${getCookie(Cookie.Username)}`)
-    const { access_token, expires_in } = await oauth.refreshToken(ctx, refreshToken)
+    const { access_token } = await oauth.refreshToken(ctx, refreshToken)
 
     log.debug?.(`authorize: token refreshed, got access token: ${access_token}`)
+    vars[Session.AccessToken] = access_token
 
-    return await authorizeTokenAndAccess(ctx, access_token, accessRule, {
-      'Set-Cookie': [
-        formatCookie(Cookie.AccessToken, access_token, expires_in - 60, conf),
-      ],
-    })
+    return await authorizeTokenAndAccess(ctx, access_token, accessRule)
 
   } else if (isAnonymousAllowed(accessRule)) {
     log.info?.('authorize: allowing anonymous access')
@@ -74,20 +71,24 @@ async function authorizeTokenAndAccess (
   ctx: Context,
   accessToken: string,
   accessRule: AccessRule,
-  headersOut: NginxHeadersOut = {},
 ): Promise<void> {
-  const { fail, log, send } = ctx
+  const { fail, log, send, vars } = ctx
 
-  const { username } = await oauth.verifyToken(ctx, accessToken)
+  const { username } = await oauth.verifyToken(ctx, accessToken).catch(err => {
+    if (err.status === 401) {
+      vars[Session.AccessToken] = undefined
+    }
+    throw err
+  })
 
   log.debug?.(`authorize: access token verified, fetching user ${username}`)
   const user = await fetchUser(ctx, username, accessToken)
 
   if (isUserAllowed(accessRule, user)) {
     log.info?.(`authorize: access granted to user ${user.username}`)
-    return send(204, undefined, headersOut)
+    return send(204)
 
   } else {
-    return fail(403, 'Access Denied', 'You are not allowed to access this page.', headersOut)
+    return fail(403, 'Access Denied', 'You are not allowed to access this page.')
   }
 }

@@ -1,9 +1,9 @@
 import qs from 'querystring'
 
 import type { Context } from './'
-import { Cookie, Session } from './constants'
+import { Session } from './constants'
 import { reject } from './error'
-import { formatCookie, parseJsonBody, timestamp } from './utils'
+import { parseJsonBody, timestamp } from './utils'
 
 
 /**
@@ -147,8 +147,7 @@ export async function verifyToken (
   if (!token.active) {
     return reject(401, 'Invalid Access Token',
       'Provided token is not active, does not exist or we are not allowed to introspect it.'
-      + ` Given token: ${accessToken}.`,
-      { 'Set-Cookie': [formatCookie(Cookie.AccessToken, '', 0, conf)] })
+      + ` Given token: ${accessToken}.`)
   }
 
   for (const key of ['client_id', 'exp'] as const) {
@@ -169,8 +168,7 @@ export async function verifyToken (
   }
   if (typeof token.exp !== 'number' || token.exp < timestamp()) {
     return reject(401, 'Invalid Access Token',
-      `Token has expired at ${token.exp}. Given token: ${accessToken}.`,
-      { 'Set-Cookie': [formatCookie(Cookie.AccessToken, '', 0, conf)] })
+      `Token has expired at ${token.exp}. Given token: ${accessToken}.`)
   }
   token.scope ??= ''
 
@@ -211,12 +209,12 @@ async function introspectToken (ctx: Context, token: string): Promise<Partial<In
  *
  * 1. `Authorization` header
  * 2. query parameter `access_token`
- * 3. cookie {@link Cookie.AccessToken}.
+ * 3. session variable {@link Session.AccessToken}.
  *
  * If the token is not found, returns `undefined`.
  */
 export function getRequestAccessToken (ctx: Context): string | undefined {
-  const { getCookie, req } = ctx
+  const { req, vars } = ctx
 
   const header = req.headersIn.Authorization
   if (header?.startsWith('Bearer ')) {
@@ -228,9 +226,9 @@ export function getRequestAccessToken (ctx: Context): string | undefined {
     return query
   }
 
-  const cookie = getCookie(Cookie.AccessToken)
-  if (cookie) {
-    return cookie
+  const session = vars[Session.AccessToken]
+  if (session) {
+    return session
   }
 
   return

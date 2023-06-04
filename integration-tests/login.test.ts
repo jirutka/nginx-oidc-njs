@@ -81,15 +81,6 @@ describe('Login', () => {
         assert(resp.headers.location!.endsWith(originalUri))
       })
 
-      and(`set cookie ${CookieName.AccessToken}`, ({ client: { cookies }, ngxOAuthConfig }) => {
-        assert.includes(cookies.get(CookieName.AccessToken), {
-          path: ngxOAuthConfig.cookiePath,
-          maxAge: oauth.accessTokenLifetime - 60,
-          httpOnly: undefined,
-          secure: true,
-        })
-      })
-
       and(`set cookie ${CookieName.SessionId}`, ({ client: { cookies }, ngxOAuthConfig }) => {
         assert.includes(cookies.get(CookieName.SessionId), {
           path: ngxOAuthConfig.cookiePath,
@@ -108,6 +99,8 @@ describe('Login', () => {
           value: oauth.userId,
         })
       })
+
+      and("session variable {varName} should be set", Session.AccessToken)
 
       and("session variable {varName} should be set", Session.IdToken)
 

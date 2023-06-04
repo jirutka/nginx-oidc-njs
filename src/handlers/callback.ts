@@ -62,12 +62,12 @@ export const callback: RequestHandler = async (ctx) => {
   log.info?.(`callback: creating session for user ${username}`)
 
   const sessionId = assert(vars.request_id, 'request_id is not set')
+  vars[`${Session.AccessToken}_new`] = tokenSet.access_token
   vars[`${Session.IdToken}_new`] = tokenSet.id_token
   vars[`${Session.RefreshToken}_new`] = tokenSet.refresh_token!
 
   return send(303, originalUri, {
     'Set-Cookie': [
-      formatCookie(Cookie.AccessToken, tokenSet.access_token, tokenSet.expires_in - 60, conf),
       formatCookie(Cookie.SessionId, sessionId, conf.cookieMaxAge, conf, 'HttpOnly'),
       formatCookie(Cookie.Username, username, conf.cookieMaxAge, conf),
       clearStateCookie,

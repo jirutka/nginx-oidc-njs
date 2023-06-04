@@ -4,7 +4,7 @@ import { useOAuthServer, useResourceProvider } from './support/hooks'
 import { describe, useSharedSteps } from './support/mocha'
 import commonSteps from './steps'
 
-import { Cookie } from '../src/constants'
+import { Session } from '../src/constants'
 
 
 describe('Proxy', () => {
@@ -48,14 +48,14 @@ describe('Proxy', () => {
   describe('with no access token and valid refresh token', () => {
     given("I'm logged in (session and cookies are set)")
 
-    and("access token has expired", (ctx) => {
-      ctx.client.cookies.remove(Cookie.AccessToken)
+    and("access token is missing from the session", async ({ nginx }) => {
+      await nginx.variables.clear(Session.AccessToken)
     })
 
     when("I make a request to a resource provider through the proxy")
 
     then("I should get response from the resource provider")
 
-    and("the response should set cookie {cookieName}", Cookie.AccessToken)
+    and("session variable {varName} should be set", Session.AccessToken)
   })
 })
