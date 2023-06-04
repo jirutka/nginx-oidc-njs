@@ -22,7 +22,7 @@ interface OptionDescriptor<T = unknown> {
  * Derive config type from the `ConfigDescriptor` `T`.
  */
 export type DeriveConfigType <T extends ConfigDescriptor> = {
-  [K in keyof T]: T[K] extends OptionDescriptor
+  readonly [K in keyof T]: T[K] extends OptionDescriptor
     ? ReturnType<T[K]['parser']>
     : Exclude<T[K], undefined> extends never
       ? string
