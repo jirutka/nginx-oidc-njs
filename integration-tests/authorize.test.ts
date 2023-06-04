@@ -1,6 +1,8 @@
 import assert from './support/assert'
 import { useOAuthServer } from './support/hooks'
 import { describe, useSharedSteps } from './support/mocha'
+import { decodeJwtPayload, shiftJwtTimes } from './support/oauth-server'
+import { timestamp } from './support/utils'
 import commonSteps from './steps'
 
 import { Cookie, Session } from '../src/constants'
@@ -20,7 +22,7 @@ describe('Authorize', () => {
 
   useOAuthServer()
 
-  describe('with no access token', () => {
+  describe('with no id token', () => {
 
     describe('with no refresh token', () => {
       given("I'm not logged in (no session and cookies exist)")
@@ -36,8 +38,8 @@ describe('Authorize', () => {
     describe('with an invalid refresh token', () => {
       given("I'm logged in (session and cookies are set)")
 
-      and("access token has expired", ({ client }) => {
-        client.cookies.remove(Cookie.AccessToken)
+      and("id token token is missing from the session", async ({ nginx }) => {
+        await nginx.variables.clear(Session.IdToken)
       })
 
       and("refresh token is invalid", async ({ nginx }) => {
@@ -54,8 +56,8 @@ describe('Authorize', () => {
     describe('with a valid refresh token', () => {
       given("I'm logged in (session and cookies are set)")
 
-      and("access token has expired", (ctx) => {
-        ctx.client.cookies.remove(Cookie.AccessToken)
+      and("id token token is missing from the session", async ({ nginx }) => {
+        await nginx.variables.clear(Session.IdToken)
       })
 
       when("I make a request to a secured page")
@@ -63,24 +65,38 @@ describe('Authorize', () => {
       then("I should get the requested page")
 
       and("the response should set cookie {cookieName}", Cookie.AccessToken)
+
+      and("session variable {varName} should be set", Session.IdToken)
     })
   })
 
+  describe('with expired id token', () => {
+    given("I'm logged in (session and cookies are set)")
 
-  describe('with an unknown access token', () => {
-    given("I have an invalid (unknown) access token", ({ client, proxyUrl }) => {
-      client.cookies.set(Cookie.AccessToken, '0a1e3021-8c69-44a9-a136-0768a0aeb2ad', proxyUrl)
+    and("id token in the session has expired", async ({ nginx, oauthServer }) => {
+      const idToken = await nginx.variables.get(Session.IdToken)
+      assert(idToken)
+
+      const expiredIdToken = await shiftJwtTimes(oauthServer!.issuer, idToken, -7200)
+      await nginx.variables.set(Session.IdToken, expiredIdToken)
     })
 
     when("I make a request to a secured page")
 
-    then("the response status should be {status}", 401)
+    then("I should get the requested page")
 
-    and("cookie {cookieName} should be cleared", Cookie.AccessToken)
+    and("the response should set cookie {cookieName}", Cookie.AccessToken)
+
+    and(`session variable ${Session.IdToken} should be set to a fresh id token`, async ({ nginx }) => {
+      const idToken = await nginx.variables.get(Session.IdToken)
+      assert(idToken)
+
+      const payload = decodeJwtPayload(idToken)
+      assert(payload.exp > timestamp())
+    })
   })
 
-
-  describe('with a valid access token', () => {
+  describe('with a valid id token', () => {
     given("I'm logged in (session and cookies are set)")
 
     when("I make a request to a secured page")

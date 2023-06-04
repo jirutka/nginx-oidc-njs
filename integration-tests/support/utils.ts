@@ -30,3 +30,8 @@ export function parseBasicAuthHeader (value: string): { username: string, passwo
 
   return { username, password }
 }
+
+/**
+ * Returns the current unix timestamp in seconds.
+ */
+export const timestamp = () => Math.floor(Date.now() / 1000)

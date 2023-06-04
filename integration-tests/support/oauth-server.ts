@@ -1,9 +1,17 @@
 import { urlencoded } from 'body-parser'
 import type { Request } from 'express'
-import { Events, JWK, MutableRedirectUri, MutableResponse, OAuth2Server, Payload } from 'oauth2-mock-server'
+import {
+  Events,
+  JWK,
+  MutableRedirectUri,
+  MutableResponse,
+  OAuth2Issuer,
+  OAuth2Server,
+  Payload,
+} from 'oauth2-mock-server'
 
 import assert from './assert'
-import { parseBasicAuthHeader } from './utils'
+import { parseBasicAuthHeader, timestamp } from './utils'
 
 
 export type { OAuth2Server }
@@ -229,7 +237,7 @@ const createIntrospectionResponse = (token: StoredToken): IntrospectionResponse 
   username: token.username,
 })
 
-function decodeJwtPayload (jwt: string): Payload {
+export function decodeJwtPayload (jwt: string): Payload {
   const parts = jwt.split('.')
   if (parts.length !== 3) {
     throw TypeError('Invalid Compact JWS')
@@ -238,4 +246,17 @@ function decodeJwtPayload (jwt: string): Payload {
   return JSON.parse(Buffer.from(parts[1], 'base64url').toString())
 }
 
-const timestamp = () => Math.floor(Date.now() / 1000)
+export async function shiftJwtTimes (
+  issuer: OAuth2Issuer,
+  jwt: string,
+  offset: number,
+): Promise<string> {
+  const payload = decodeJwtPayload(jwt)
+  payload.iat += offset
+  payload.exp += offset
+  payload.nbf += offset
+
+  return await issuer.buildToken({
+    scopesOrTransform: (_header, newPayload) => Object.assign(newPayload, payload)
+  })
+}
