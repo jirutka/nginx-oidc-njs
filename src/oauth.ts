@@ -75,12 +75,10 @@ export async function requestToken (ctx: Context, grantType: GrantType, value: s
       const data = parseJsonBody(responseText) as ErrorResponse
 
       if (data.error === 'invalid_grant') {
-        if (grantType === 'refresh_token') {
-          ctx.vars[Session.RefreshToken] = undefined
-          return reject(401, 'Invalid Refresh Token', data.error_description)
-        } else {
-          return reject(401, 'Invalid Authorization Code', data.error_description)
-        }
+        const title = grantType === 'refresh_token'
+          ? 'Invalid Refresh Token'
+          : 'Invalid Authorization Code'
+        return reject(401, title, data.error_description)
       } else {
         return reject(500, 'OAuth Configuration Error',
           `OAuth server returned error: ${data.error_description} (${data.error}).`
@@ -114,10 +112,19 @@ function isTokenResponse(obj: unknown): obj is TokenResponse {
 }
 
 /**
- * Requests a new access token using the given refresh token.
+ * Requests a new access token using the given refresh token. If the refresh
+ * token is invalid (OAAS returns `invalid_grant` error), it will remove it from
+ * the session.
  */
 export async function refreshToken (ctx: Context, refreshToken: string): Promise<TokenResponse> {
-  return requestToken(ctx, 'refresh_token', refreshToken)
+  try {
+    return await requestToken(ctx, 'refresh_token', refreshToken)
+  } catch (err: any) {
+    if (err.status === 401) {
+      ctx.vars[Session.RefreshToken] = undefined
+    }
+    throw err
+  }
 }
 
 /**
