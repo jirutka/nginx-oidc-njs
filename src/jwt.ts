@@ -31,6 +31,11 @@ export interface IdToken extends JwtClaimsSet {
   /** A value used to associate the Client session with the ID Token, and to mitigate replay attacks. */
   nonce?: string
   /**
+   * The roles of the authenticated user. This is set to the claim specified by
+   * the `claimRoles` config option.
+   */
+  roles: readonly string[]
+  /**
    * The username for the authenticated user. This is set to the claim specified
    * by the `claimUsername` config option.
    */
@@ -81,6 +86,18 @@ export async function decodeAndValidateIdToken (conf: Context['conf'], jwt: stri
       `The ID token is missing claim '${conf.claimUsername}' or it's not a string.`)
   }
   claims.username = username
+
+  if (conf.claimRoles) {
+    const roles = claims[conf.claimRoles]
+
+    if (!roles || !Array.isArray(roles)) {
+      return reject(500, 'Invalid ID token',
+        `The ID token is missing claim '${conf.claimRoles}' or it's not an array.`)
+    }
+    claims.roles = roles
+  } else {
+    claims.roles = []
+  }
 
   return claims
 }
