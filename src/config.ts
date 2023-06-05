@@ -13,7 +13,6 @@ const configDescriptor = {
   cookieAttrs: 'SameSite=Strict',
   cookieMaxAge: 2592000,  // 30 days
   cookiePath: '/',
-  cookiePrefix: 'oauth',
   insecure: false,
   logLevel: {
     default: LogLevel.error,
