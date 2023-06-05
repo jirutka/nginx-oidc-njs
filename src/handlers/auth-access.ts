@@ -1,6 +1,6 @@
 import type { RequestHandler } from '..'
 import { Cookie, Session } from '../constants'
-import { decodeAndValidateJwtClaims, idTokenUsername, validateJwtSign } from '../jwt'
+import { decodeAndValidateIdToken, validateJwtSign } from '../jwt'
 import * as oauth from '../oauth'
 
 
@@ -8,16 +8,16 @@ export const auth_access: RequestHandler = async (ctx) => {
   const { conf, getCookie, log, send, vars } = ctx
   ctx.handlerType = 'auth_request'
 
-  const idToken = vars[Session.IdToken]
-  if (idToken) {
-    log.debug?.(`authorize: validating id token: ${idToken}`)
+  const idTokenJwt = vars[Session.IdToken]
+  if (idTokenJwt) {
+    log.debug?.(`authorize: validating id token: ${idTokenJwt}`)
 
-    const claims = await decodeAndValidateJwtClaims(conf, idToken).catch(err => {
+    const idToken = await decodeAndValidateIdToken(conf, idTokenJwt).catch(err => {
       log.warn?.(`authorize: invalid or malformed ID token: ${err.detail ?? err.message}`)
       vars[Session.IdToken] = undefined
     })
-    if (claims) {
-      log.info?.(`authorize: access granted to user ${idTokenUsername(claims)}`)
+    if (idToken) {
+      log.info?.(`authorize: access granted to user ${idToken.username}`)
       return send(204)
     }
   }
@@ -29,7 +29,7 @@ export const auth_access: RequestHandler = async (ctx) => {
 
     log.debug?.(`authorize: token refreshed, got id token: ${tokenSet.id_token}`)
     await validateJwtSign(ctx, tokenSet.id_token)
-    await decodeAndValidateJwtClaims(conf, tokenSet.id_token)
+    await decodeAndValidateIdToken(conf, tokenSet.id_token)
 
     vars[Session.AccessToken] = tokenSet.access_token
     vars[Session.IdToken] = tokenSet.id_token

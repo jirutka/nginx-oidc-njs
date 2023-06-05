@@ -8,6 +8,7 @@ const configDescriptor = {
   serverUrl: undefined,
   clientId: undefined,
   scope: 'openid',
+  claimUsername: 'preferred_username',
   redirectUri: '/-/oauth/callback',
   internalLocationsPrefix: '/-/internal',
   cookieAttrs: 'SameSite=Strict',

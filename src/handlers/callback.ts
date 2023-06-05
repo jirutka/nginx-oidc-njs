@@ -1,6 +1,6 @@
 import type { RequestHandler } from '..'
 import { Cookie, CSRF_TOKEN_LENGTH, Session } from '../constants'
-import { decodeAndValidateJwtClaims, IdToken, idTokenUsername, validateJwtSign } from '../jwt'
+import { decodeAndValidateIdToken, validateJwtSign } from '../jwt'
 import * as oauth  from '../oauth'
 import { assert, extractUrlPath, formatCookie, hashCsrfToken } from '../utils'
 
@@ -56,8 +56,7 @@ export const callback: RequestHandler = async (ctx) => {
             + ` access_token=${tokenSet.access_token}, refresh_token=${tokenSet.refresh_token}`)
 
   await validateJwtSign(ctx, tokenSet.id_token)
-  const claims = await decodeAndValidateJwtClaims(conf, tokenSet.id_token) as IdToken
-  const username = idTokenUsername(claims)
+  const { username } = await decodeAndValidateIdToken(conf, tokenSet.id_token)
 
   log.info?.(`callback: creating session for user ${username}`)
 

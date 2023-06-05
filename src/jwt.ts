@@ -23,13 +23,18 @@ interface JwtClaimsSet {
   nbf?: number
   /** JWT ID – provides a unique identifier for the JWT. */
   jti?: string
+
+  [key: string]: unknown
 }
 
 export interface IdToken extends JwtClaimsSet {
   /** A value used to associate the Client session with the ID Token, and to mitigate replay attacks. */
   nonce?: string
-  /** The (preferred) username for the authenticated user. */
-  preferred_username?: string
+  /**
+   * The username for the authenticated user. This is set to the claim specified
+   * by the `claimUsername` config option.
+   */
+  username: string
 }
 
 /**
@@ -57,49 +62,63 @@ export async function validateJwtSign (ctx: Context, jwt: string): Promise<void>
 }
 
 /**
- * Decodes the payload from the given `jwt` token (in Compact JWS format),
+ * Decodes the ID token from the given `jwt` token (in Compact JWS format),
  * validates the claims and returns them. This function does **not** validate
  * the token signature.
  *
  * @throws {HttpError} if `jwt` is malformed, invalid or expired.
  * @throws {SyntaxError} if `jwt`'s payload is not a valid JSON.
  */
-export async function decodeAndValidateJwtClaims (conf: Context['conf'], jwt: string): Promise<JwtClaimsSet> {
+export async function decodeAndValidateIdToken (conf: Context['conf'], jwt: string): Promise<IdToken> {
   // Note: This function doesn't have to be async, but since all others are,
   // it's more convenient to use the same error handling style.
+
+  const claims = decodeAndValidateJwtClaims(conf, jwt) as IdToken
+
+  const username = claims[conf.claimUsername]
+  if (!username || typeof username !== 'string') {
+    return reject(500, 'Invalid ID token',
+      `The ID token is missing claim '${conf.claimUsername}' or it's not a string.`)
+  }
+  claims.username = username
+
+  return claims
+}
+
+function decodeAndValidateJwtClaims (conf: Context['conf'], jwt: string): JwtClaimsSet {
   const claims = decodeJwtPayload(jwt)
 
   if (REQUIRED_CLAIMS.some(claim => !claims[claim])) {
-    return reject(500, 'Malformed JWT token',
+    throw HttpError(500, 'Malformed JWT token',
       `The token is missing required claims: ${REQUIRED_CLAIMS.filter(claim => !claims[claim]).join(', ')}.`)
   }
 
   if (!isPositiveInteger(claims.iat)) {
-    return reject(500, 'Malformed JWT token',
+    throw HttpError(500, 'Malformed JWT token',
       `The token's iat claim is not a valid number: ${claims.iat}.`)
   }
 
   if (claims.iss !== conf.issuer) {
-    return reject(401, 'Invalid JWT token',
+    throw HttpError(401, 'Invalid JWT token',
       `The token's issuer '${claims.iss}' does not match the configured issuer '${conf.issuer}'.`)
   }
 
   const aud = arrify(claims.aud)
   if (!aud.includes(conf.clientId)) {
-    return reject(401, 'Invalid JWT token',
+    throw HttpError(401, 'Invalid JWT token',
       `The token's audience (${aud.join(', ')}) does not include the configured client_id.`)
   }
 
   if (!isPositiveInteger(claims.exp) || claims.exp <= timestamp()) {
-    return reject(401, 'Expired JWT token', `The token expired at ${claims.exp}.`)
+    throw HttpError(401, 'Expired JWT token', `The token expired at ${claims.exp}.`)
   }
 
   return claims
 }
 
 /**
- * Decodes and returns payload from the given `jwt` token (in Compact JWS format)
- * without any validation.
+ * Decodes and returns payload from the given `jwt` token (in Compact JWS
+ * format) without any validation.
  *
  * @throws {HttpError} if `jwt` doesn't have three dot-separated parts.
  * @throws {SyntaxError} if `jwt`'s payload is not a valid JSON.
@@ -111,8 +130,4 @@ function decodeJwtPayload (jwt: string): JwtClaimsSet {
   }
 
   return JSON.parse(Buffer.from(parts[1], 'base64url').toString())
-}
-
-export function idTokenUsername (claims: IdToken): string {
-  return claims.preferred_username ?? claims.sub
 }
