@@ -16,7 +16,7 @@ export interface TokenResponse {
   /** The refresh token. */
   refresh_token?: string
   /** The ID Token; this is present if the `openid` scope was requested. */
-  id_token?: string
+  id_token: string
   /** The lifetime in seconds of the access token. */
   expires_in: number
   /** A space-separated list of scopes associated with this token. */
@@ -89,11 +89,14 @@ export async function requestToken (ctx: Context, grantType: GrantType, value: s
     }
     case 200: {
       const data = parseJsonBody(responseText)
-      if (isTokenResponse(data)) {
-        return data
-      } else {
+      if (!isTokenResponse(data)) {
         return reject(500, 'OAuth Server Error',
           `OAuth server returned an invalid token response: ${responseText?.slice(0, 128)}...`)
+      } else if (!data.id_token) {
+        return reject(500, 'OAuth Configuration Error',
+          'OAuth server returned token response without id_token.')
+      } else {
+        return data
       }
     }
     default: {

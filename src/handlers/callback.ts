@@ -55,11 +55,6 @@ export const callback: RequestHandler = async (ctx) => {
   log.debug?.(`callback: received id_token=${tokenSet.id_token},`
             + ` access_token=${tokenSet.access_token}, refresh_token=${tokenSet.refresh_token}`)
 
-  if (!tokenSet.id_token) {
-    return fail(500, 'OAuth Configuration Error',
-      'OAuth server returned a token set without id_token.')
-  }
-
   await validateJwtSign(ctx, tokenSet.id_token)
   const claims = await decodeAndValidateJwtClaims(conf, tokenSet.id_token) as IdToken
   const username = idTokenUsername(claims)

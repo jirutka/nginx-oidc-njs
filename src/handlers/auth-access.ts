@@ -6,7 +6,7 @@ import { formatCookie } from '../utils'
 
 
 export const auth_access: RequestHandler = async (ctx) => {
-  const { conf, fail, getCookie, log, send, vars } = ctx
+  const { conf, getCookie, log, send, vars } = ctx
   ctx.handlerType = 'auth_request'
 
   const idToken = vars[Session.IdToken]
@@ -27,11 +27,6 @@ export const auth_access: RequestHandler = async (ctx) => {
   if (refreshToken) {
     log.info?.(`authorize: refreshing token for user ${getCookie(Cookie.Username)}`)
     const tokenSet = await oauth.refreshToken(ctx, refreshToken)
-
-    if (!tokenSet.id_token) {
-      return fail(401, 'OAuth Configuration Error',
-        'OAuth server returned a token set without id_token.')
-    }
 
     log.debug?.(`authorize: token refreshed, got id token: ${tokenSet.id_token}`)
     await validateJwtSign(ctx, tokenSet.id_token)
