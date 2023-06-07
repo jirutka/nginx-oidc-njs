@@ -1,7 +1,6 @@
 import type { Context, RequestHandler } from '..'
 import { Cookie, Session, VAR_SITE_ROOT_URI } from '../constants'
 import * as oauth from '../oauth'
-import { fetchUser } from '../user-api'
 import { assert } from '../utils'
 import {
   findSiteRootUri,
@@ -12,6 +11,7 @@ import {
   splitUriToBranchAndPagePath,
   AccessRule,
 } from '../pages'
+import { IdToken, decodeAndValidateIdToken, validateJwtSign } from '../jwt'
 
 
 export const auth_pages: RequestHandler = async (ctx) => {
@@ -39,23 +39,35 @@ export const auth_pages: RequestHandler = async (ctx) => {
   const config = readSiteConfig(documentRoot + siteRootUri)
   const accessRule = resolveAccessRule(config, branch, pagePath, conf.pagesFallbackPolicy)
 
-  const accessToken = oauth.getRequestAccessToken(ctx)
+  const idTokenJwt = vars[Session.IdToken]
+  if (idTokenJwt) {
+    log.debug?.(`authorize: validating id token: ${idTokenJwt}`)
+
+    const idToken = await decodeAndValidateIdToken(conf, idTokenJwt).catch(err => {
+      log.warn?.(`authorize: invalid or malformed ID token: ${err.detail ?? err.message}`)
+      vars[Session.IdToken] = undefined
+    })
+    if (idToken) {
+      return await authorizeAccess(ctx, idToken, accessRule)
+    }
+  }
+
   const refreshToken = vars[Session.RefreshToken]
-
-  if (accessToken) {
-    log.debug?.(`authorize: verifying access token: ${accessToken}`)
-    return await authorizeTokenAndAccess(ctx, accessToken, accessRule)
-
-  } else if (refreshToken) {
+  if (refreshToken) {
     log.info?.(`authorize: refreshing token for user ${getCookie(Cookie.Username)}`)
-    const { access_token } = await oauth.refreshToken(ctx, refreshToken)
+    const tokenSet = await oauth.refreshToken(ctx, refreshToken)
 
-    log.debug?.(`authorize: token refreshed, got access token: ${access_token}`)
-    vars[Session.AccessToken] = access_token
+    log.debug?.(`authorize: token refreshed, got id token: ${tokenSet.id_token}`)
+    await validateJwtSign(ctx, tokenSet.id_token)
+    const idToken = await decodeAndValidateIdToken(conf, tokenSet.id_token)
 
-    return await authorizeTokenAndAccess(ctx, access_token, accessRule)
+    vars[Session.AccessToken] = tokenSet.access_token
+    vars[Session.IdToken] = tokenSet.id_token
 
-  } else if (isAnonymousAllowed(accessRule)) {
+    return await authorizeAccess(ctx, idToken, accessRule)
+  }
+
+  if (isAnonymousAllowed(accessRule)) {
     log.info?.('authorize: allowing anonymous access')
     return send(204)
 
@@ -67,28 +79,15 @@ export const auth_pages: RequestHandler = async (ctx) => {
   }
 }
 
-async function authorizeTokenAndAccess (
-  ctx: Context,
-  accessToken: string,
-  accessRule: AccessRule,
-): Promise<void> {
-  const { fail, log, send, vars } = ctx
+async function authorizeAccess (ctx: Context, idToken: IdToken, accessRule: AccessRule): Promise<void> {
+  const { fail, log, send } = ctx
 
-  const { username } = await oauth.verifyToken(ctx, accessToken).catch(err => {
-    if (err.status === 401) {
-      vars[Session.AccessToken] = undefined
-    }
-    throw err
-  })
-
-  log.debug?.(`authorize: access token verified, fetching user ${username}`)
-  const user = await fetchUser(ctx, username, accessToken)
-
-  if (isUserAllowed(accessRule, user)) {
-    log.info?.(`authorize: access granted to user ${user.username}`)
+  if (isUserAllowed(accessRule, idToken)) {
+    log.info?.(`authorize: access granted to user ${idToken.username}`)
     return send(204)
 
   } else {
+    log.info?.(`authorize: access denied to user ${idToken.username}`)
     return fail(403, 'Access Denied', 'You are not allowed to access this page.')
   }
 }
