@@ -57,5 +57,7 @@ describe('Proxy', () => {
     then("I should get response from the resource provider")
 
     and("session variable {varName} should be set", Session.AccessToken)
+
+    and("session variable {varName} should be set", Session.IdToken)
   })
 })
