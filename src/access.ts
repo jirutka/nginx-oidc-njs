@@ -32,6 +32,12 @@ export const enum BasicRole {
 }
 
 /**
+ * The default allow rule that permits any authenticated user. This is for
+ * performance optimisation.
+ */
+export const ALLOW_AUTHENTICATED: readonly string[] = [BasicRole.AUTHENTICATED]
+
+/**
  * Authorizes access for the principal (user) identified by the given `idToken`
  * based on the `allow` and `deny` list in the given `accessRule` object.
  *
@@ -59,6 +65,9 @@ function isAllowed ({ username, roles }: Principal, access: AccessRule): boolean
     if (username in deny || roles.some(role => role in deny)) {
       return false
     }
+  }
+  if (access.allow === ALLOW_AUTHENTICATED) {
+    return true
   }
   if (access.allow.length > 0) {
     const allow = toLookupTable(access.allow)

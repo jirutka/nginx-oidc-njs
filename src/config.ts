@@ -1,4 +1,4 @@
-import { BasicRole } from './access'
+import { ALLOW_AUTHENTICATED, BasicRole } from './access'
 import { createConfigReader, DeriveConfigType } from './config-reader'
 import { parseLogLevel, LogLevel } from './logger'
 import { splitWhitespace } from './utils'
@@ -24,7 +24,7 @@ const configDescriptor = {
   logPrefix: '[oauth] ',
   errorPagesDir: '',
   allow: {
-    default: [BasicRole.AUTHENTICATED] as readonly string[],
+    default: ALLOW_AUTHENTICATED,
     parser: splitWhitespace,
   },
   deny: {
