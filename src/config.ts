@@ -1,6 +1,7 @@
 import { BasicRole } from './access'
 import { createConfigReader, DeriveConfigType } from './config-reader'
 import { parseLogLevel, LogLevel } from './logger'
+import { splitWhitespace } from './utils'
 
 
 const configDescriptor = {
@@ -23,6 +24,14 @@ const configDescriptor = {
   logPrefix: '[oauth] ',
   errorPagesDir: '',
   accessAllowAnonymous: false,
+  allow: {
+    default: [BasicRole.AUTHENTICATED] as readonly string[],
+    parser: splitWhitespace,
+  },
+  deny: {
+    default: [] as readonly string[],
+    parser: splitWhitespace,
+  },
   pagesDefaultBranch: 'master',
   pagesMinDepth: 0,
   pagesMaxDepth: 3,

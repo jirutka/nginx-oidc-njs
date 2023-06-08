@@ -281,6 +281,13 @@ export function renderTemplate (template: string, params: Record<string, unknown
 }
 
 /**
+ * Splits `str` by whitespace.
+ */
+export function splitWhitespace (str: string): string[] {
+  return str.split(/\s+/)
+}
+
+/**
  * Returns the current unix timestamp in seconds.
  */
 export const timestamp = () => Math.floor(Date.now() / 1000)
