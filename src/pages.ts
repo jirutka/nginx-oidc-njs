@@ -1,4 +1,5 @@
-import { globMatch, pathExists, readJSON, toLookupTable } from './utils'
+import type { AccessRule } from './access'
+import { globMatch, pathExists, readJSON } from './utils'
 
 
 export interface SiteConfig {
@@ -17,41 +18,16 @@ export interface SiteConfig {
 //  https://github.com/nginx/njs/issues/189.
 interface BranchAccessRules {
   branch: string,
-  rules: AccessRule[],
+  rules: PathAccessRule[],
 }
 
-export interface AccessRule {
+interface PathAccessRule extends AccessRule {
   /**
    * A glob pattern specifying the page paths to which the rule applies.
    * Subpages are implicitly included, so there is no need to specify them
    * further. The path must start with `/` and it's relative to the site root.
    */
-  path: string,
-  /**
-   * A set of basic roles (see {@link BasicRole}), business roles and/or usernames.
-   * If the user has any of the specified roles or username and has none of the roles
-   * or username specified in `deny`, access will be allowed. Otherwise, access will
-   * be denied.
-   */
-  allow?: string[]
-  /**
-   * A set of basic roles (see {@link BasicRole}), business roles and/or usernames.
-   * If the user has any of these roles or username, access will be denied.
-   */
-  deny?: string[]
-}
-
-export const enum BasicRole {
-  /** No authentication is required. */
-  ANONYMOUS = 'ANONYMOUS',
-
-  /** Authentication is required. */
-  AUTHENTICATED = 'AUTHENTICATED',
-}
-
-interface User {
-  readonly username: string
-  readonly roles: ReadonlyArray<string>
+  path: string
 }
 
 // A special directory (or symlink) for "root sites" - a site of the namespace.
@@ -158,36 +134,15 @@ export function resolveAccessRule (
   if (rules) {
     const rule = rules.find(rule => globMatch(rule.path, uri))
     if (rule) {
-      return rule
+      return {
+        allow: rule.allow ?? [],
+        deny: rule.deny ?? [],
+      }
     }
   }
 
   return {
-    path: '/',
     allow: fallbackPolicy === 'DENY' ? [] : [fallbackPolicy],
+    deny: [],
   }
-}
-
-export function isAnonymousAllowed (rule: AccessRule): boolean {
-  return !!rule.allow?.includes(BasicRole.ANONYMOUS)
-    && !rule.deny?.includes(BasicRole.ANONYMOUS)
-}
-
-export function isUserAllowed (rule: AccessRule, { username, roles }: User): boolean {
-  if (rule.deny?.length) {
-    const deny = toLookupTable(rule.deny)
-    if (username in deny || roles.some(role => role in deny)) {
-      return false
-    }
-  }
-  if (rule.allow?.length) {
-    const allow = toLookupTable(rule.allow)
-    if (BasicRole.ANONYMOUS in allow || BasicRole.AUTHENTICATED in allow) {
-      return true
-    }
-    if (username in allow || roles.some(role => role in allow)) {
-      return true
-    }
-  }
-  return false
 }

@@ -1,17 +1,15 @@
-import type { Context, RequestHandler } from '..'
+import type { RequestHandler } from '..'
+import { authorizeAccess, isAnonymousAllowed } from '../access'
 import { Cookie, Session, VAR_SITE_ROOT_URI } from '../constants'
 import * as oauth from '../oauth'
 import { assert } from '../utils'
 import {
   findSiteRootUri,
-  isAnonymousAllowed,
-  isUserAllowed,
   readSiteConfig,
   resolveAccessRule,
   splitUriToBranchAndPagePath,
-  AccessRule,
 } from '../pages'
-import { IdToken, decodeAndValidateIdToken, validateJwtSign } from '../jwt'
+import { decodeAndValidateIdToken, validateJwtSign } from '../jwt'
 
 
 export const auth_pages: RequestHandler = async (ctx) => {
@@ -76,18 +74,5 @@ export const auth_pages: RequestHandler = async (ctx) => {
     return send(401, undefined, {
       'WWW-Authenticate': 'Bearer error="unauthorized"',
     })
-  }
-}
-
-async function authorizeAccess (ctx: Context, idToken: IdToken, accessRule: AccessRule): Promise<void> {
-  const { fail, log, send } = ctx
-
-  if (isUserAllowed(accessRule, idToken)) {
-    log.info?.(`authorize: access granted to user ${idToken.username}`)
-    return send(204)
-
-  } else {
-    log.info?.(`authorize: access denied to user ${idToken.username}`)
-    return fail(403, 'Access Denied', 'You are not allowed to access this page.')
   }
 }

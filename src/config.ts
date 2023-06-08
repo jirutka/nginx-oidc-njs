@@ -1,5 +1,5 @@
+import { BasicRole } from './access'
 import { createConfigReader, DeriveConfigType } from './config-reader'
-import { BasicRole } from './pages'
 import { parseLogLevel, LogLevel } from './logger'
 
 
