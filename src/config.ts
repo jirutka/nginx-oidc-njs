@@ -23,7 +23,6 @@ const configDescriptor = {
   },
   logPrefix: '[oauth] ',
   errorPagesDir: '',
-  accessAllowAnonymous: false,
   allow: {
     default: [BasicRole.AUTHENTICATED] as readonly string[],
     parser: splitWhitespace,

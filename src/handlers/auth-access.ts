@@ -1,5 +1,5 @@
 import type { RequestHandler } from '..'
-import { authorizeAccess } from '../access'
+import { authorizeAccess, isAnonymousAllowed } from '../access'
 import { Cookie, Session } from '../constants'
 import { decodeAndValidateIdToken, validateJwtSign } from '../jwt'
 import * as oauth from '../oauth'
@@ -37,7 +37,7 @@ export const auth_access: RequestHandler = async (ctx) => {
     return authorizeAccess(ctx, idToken, conf)
   }
 
-  if (conf.accessAllowAnonymous) {
+  if (isAnonymousAllowed(conf)) {
     log.debug?.('authorize: access granted to unauthenticated user')
     return send(204)
 
