@@ -42,7 +42,7 @@ export function parseLogLevel (value: string): LogLevel {
   if (typeof level === 'number') {
     return level
   }
-  throw RangeError(`Invalid log level: ${value}`)
+  throw new RangeError(`Invalid log level: ${value}`)
 }
 
 /**

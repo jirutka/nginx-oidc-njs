@@ -72,7 +72,7 @@ export const createConfigReader = <T extends ConfigDescriptor> (
           value = isOptionDescriptor(desc) ? desc.default : desc
         }
         if (value === undefined) {
-          throw Error(`Required variable $${varName} is not set`)
+          throw new Error(`Required variable $${varName} is not set`)
         }
 
         // Replace property with a plain value assignment.

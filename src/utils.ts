@@ -27,7 +27,7 @@ export function arrify <T> (value: T): Arrify<T> {
  */
 export function assert <T> (value: T | undefined | null | false | 0 | '', message: string): T {
   if (!value) {
-    throw Error(message)
+    throw new Error(message)
   }
   return value
 }
@@ -227,11 +227,11 @@ export const parseBoolean = (value: string): boolean => value === 'true'
  */
 export function parseJsonBody (body?: NjsByteString): object {
   if (body == null) {
-    throw TypeError('requestBody has not been read')
+    throw new TypeError('requestBody has not been read')
   }
   const str = body?.toUTF8()
   if (str == null) {
-    throw TypeError('requestBody is not a valid UTF8 string')
+    throw new TypeError('requestBody is not a valid UTF8 string')
   }
   return JSON.parse(str)
 }
