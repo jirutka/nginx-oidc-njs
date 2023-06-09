@@ -2,7 +2,7 @@ import assert from './support/assert'
 import { defineSteps } from './support/shared-steps'
 
 
-const oauthCookies = ['oauth_username', 'oidc_session_id'] as const
+const oauthCookies = ['oidc_username', 'oidc_session_id'] as const
 const sessionVariables = ['oidc_access_token', 'oidc_id_token', 'oidc_refresh_token'] as const
 
 export default defineSteps({
@@ -13,7 +13,7 @@ export default defineSteps({
   "I'm logged in (session and cookies are set)": async ({ client, nginx, proxyUrl }) => {
     client.cookies.clear()
 
-    await client.post(`${proxyUrl}/-/oauth/login`, { followRedirect: true })
+    await client.post(`${proxyUrl}/-/oidc/login`, { followRedirect: true })
 
     for (const cookieName of oauthCookies) {
       assert(client.cookies.get(cookieName))

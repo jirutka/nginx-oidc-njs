@@ -16,12 +16,12 @@ describe('Login', () => {
 
   const { given, when, then, and } = useSharedSteps({
     ...commonSteps,
-    "the proxy should redirect me to $oauth_server_url/authorize": ({ resp, oauthServerUrl }) => {
+    "the proxy should redirect me to $oidc_server_url/authorize": ({ resp, oauthServerUrl }) => {
       assert(resp.statusCode === 303)
       assert(resp.headers.location!.split('?')[0] === `${oauthServerUrl}/authorize`)
     },
-    "OAAS should redirect me to the $oauth_redirect_uri": ({ resp, proxyUrl }) => {
-      assert(resp.headers.location!.split('?')[0] === `${proxyUrl}/-/oauth/callback`)
+    "OAAS should redirect me to the $oidc_redirect_uri": ({ resp, proxyUrl }) => {
+      assert(resp.headers.location!.split('?')[0] === `${proxyUrl}/-/oidc/callback`)
     },
   })
 
@@ -31,7 +31,7 @@ describe('Login', () => {
 
     given("I'm not logged in (no session and cookies exist)")
 
-    when("I make a GET request to proxy {path}", '/-/oauth/login')
+    when("I make a GET request to proxy {path}", '/-/oidc/login')
 
     then("the response status should be {status}", 405)
 
@@ -46,16 +46,16 @@ describe('Login', () => {
       given("I'm not logged in (no session and cookies exist)")
 
       when("I make a POST request to the proxy's login endpoint with query <originalUri>", async (ctx) => {
-        ctx.resp = await ctx.client.post(`${ctx.proxyUrl}/-/oauth/login?original_uri=${originalUri}`)
+        ctx.resp = await ctx.client.post(`${ctx.proxyUrl}/-/oidc/login?original_uri=${originalUri}`)
       })
 
-      then("the proxy should redirect me to $oauth_server_url/authorize")
+      then("the proxy should redirect me to $oidc_server_url/authorize")
 
       and(`should set ${CookieName.State} cookie with <csrfToken> and <originalUri>`, (ctx) => {
         const { client: { cookies } } = ctx
 
         assert.includes(cookies.get(CookieName.State), {
-          path: '/-/oauth/callback',
+          path: '/-/oidc/callback',
           maxAge: 120,
           httpOnly: true,
           secure: true,
@@ -68,7 +68,7 @@ describe('Login', () => {
 
       when("I follow the redirect")
 
-      then("OAAS should redirect me to the $oauth_redirect_uri")
+      then("OAAS should redirect me to the $oidc_redirect_uri")
 
       and("the URL should contain parameter 'state' with hashed <csrfToken> and parameter 'code'", ({ resp }) => {
         assert.includes(resp.headers.location, `state=${hashCsrf(csrfToken)}`)
@@ -115,15 +115,15 @@ describe('Login', () => {
 
       given("I'm not logged in (no session and cookies exist)")
 
-      when("I make a POST request to proxy {path}", '/-/oauth/login')
+      when("I make a POST request to proxy {path}", '/-/oidc/login')
 
-      then("the proxy should redirect me to $oauth_server_url/authorize")
+      then("the proxy should redirect me to $oidc_server_url/authorize")
 
       when("I follow the redirect [login and deny the authorization request]", async (ctx) => {
         ctx.resp = await ctx.client.get(ctx.resp.headers.location!)
       })
 
-      then("OAAS should redirect me to the $oauth_redirect_uri")
+      then("OAAS should redirect me to the $oidc_redirect_uri")
 
       and("the URL should contain parameter 'error=access_denied'", ({ resp }) => {
         assert.includes(resp.headers.location, 'error=access_denied')

@@ -15,7 +15,7 @@ describe('Logout', () => {
   describe('using GET method', () => {
     given("I'm logged in (session and cookies are set)")
 
-    when("I make a GET request to proxy {path}", '/-/oauth/logout')
+    when("I make a GET request to proxy {path}", '/-/oidc/logout')
 
     then("the response status should be {status}", 405)
   })
@@ -26,7 +26,7 @@ describe('Logout', () => {
       given("I'm logged in (session and cookies are set)")
 
       when("I make a POST request to the proxy's logout endpoint with query <nextUri>", async (ctx) => {
-        ctx.resp = await ctx.client.post(`${ctx.proxyUrl}/-/oauth/logout?nextUri=${nextUri}`)
+        ctx.resp = await ctx.client.post(`${ctx.proxyUrl}/-/oidc/logout?nextUri=${nextUri}`)
       })
 
       then("the proxy should redirect me to <nextUri>", async ({ resp }) => {
@@ -42,7 +42,7 @@ describe('Logout', () => {
     describe('without nextUri', () => {
       given("I'm logged in (session and cookies are set)")
 
-      when("I make a POST request to proxy {path}", '/-/oauth/logout')
+      when("I make a POST request to proxy {path}", '/-/oidc/logout')
 
       then("the proxy should redirect me to <conf.cookiePath>", async ({ resp }) => {
         assert(resp.statusCode === 303)

@@ -29,7 +29,7 @@ describe('Authorize', () => {
 
       when("I make a request to a secured page")
 
-      then("the proxy should redirect me to $oauth_server_url/authorize", ({ resp, oauthServerUrl }) => {
+      then("the proxy should redirect me to $oidc_server_url/authorize", ({ resp, oauthServerUrl }) => {
         assert(resp.statusCode === 303)
         assert(resp.headers.location!.split('?')[0] === `${oauthServerUrl}/authorize`)
       })

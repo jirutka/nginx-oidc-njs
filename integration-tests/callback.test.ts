@@ -22,22 +22,22 @@ describe('Callback', () => {
     "state cookie with a CSRF token is provided": ({ client, proxyUrl }) => {
       client.cookies.set(Cookie.State, encodeURI(state), proxyUrl, {
         httpOnly: true,
-        path: '/-/oauth/callback',
+        path: '/-/oidc/callback',
       })
     },
     "I make a GET request to the proxy's callback endpoint with query: {query}": async (ctx, query: string) => {
-      ctx.resp = await ctx.client.get(`${ctx.proxyUrl}/-/oauth/callback?${query}`)
+      ctx.resp = await ctx.client.get(`${ctx.proxyUrl}/-/oidc/callback?${query}`)
     },
     "I make a GET request to the proxy's callback endpoint with a valid 'code' and 'state'": async (ctx) => {
       const code = await getValidAuthCode(ctx, csrfToken)
-      ctx.resp = await ctx.client.get(`${ctx.proxyUrl}/-/oauth/callback?code=${code}&state=${csrfTokenHash}`)
+      ctx.resp = await ctx.client.get(`${ctx.proxyUrl}/-/oidc/callback?code=${code}&state=${csrfTokenHash}`)
     },
   })
 
   useOAuthServer()
 
   describe('with no query parameters', () => {
-    when("I make a GET request to proxy {path}", '/-/oauth/callback')
+    when("I make a GET request to proxy {path}", '/-/oidc/callback')
 
     then("the response status should be {status}", 400)
   })

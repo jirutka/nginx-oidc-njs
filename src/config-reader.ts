@@ -42,8 +42,8 @@ export type ConfigReader<T> = (variables: Record<string, string | undefined>) =>
  *
  * Option names are expected to be in camelCase notation and corresponding nginx
  * variables in snake_case notation with the specified prefix. For example, if
- * `varPrefix` is `'oauth_'`, then option `clientSecret` is read from nginx
- * variable `oauth_client_secret`.
+ * `varPrefix` is `'oidc_'`, then option `clientSecret` is read from nginx
+ * variable `oidc_client_secret`.
  *
  * @param configDescriptor An object with all the configuration options and their
  *   default values or `undefined` in the case of required variables.

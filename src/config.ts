@@ -11,7 +11,7 @@ const configDescriptor = {
   scope: 'openid',
   claimRoles: '',
   claimUsername: 'preferred_username',
-  redirectUri: '/-/oauth/callback',
+  redirectUri: '/-/oidc/callback',
   internalLocationsPrefix: '/-/internal',
   cookieAttrs: 'SameSite=Strict',
   cookieMaxAge: 2592000,  // 30 days
@@ -21,7 +21,7 @@ const configDescriptor = {
     default: LogLevel.error,
     parser: parseLogLevel,
   },
-  logPrefix: '[oauth] ',
+  logPrefix: '[oidc] ',
   errorPagesDir: '',
   allow: {
     default: ALLOW_AUTHENTICATED,
@@ -39,4 +39,4 @@ const configDescriptor = {
 
 export type Config = DeriveConfigType<typeof configDescriptor>
 
-export const configReader = createConfigReader(configDescriptor, 'oauth_')
+export const configReader = createConfigReader(configDescriptor, 'oidc_')

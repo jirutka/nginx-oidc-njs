@@ -138,11 +138,11 @@ export function useOAuthServer (opts: Partial<OAuthOptions> = {}): void {
     this.oauthServerOpts = {
       clients: [
         {
-          id: 'oauth-proxy',
+          id: 'oidc-proxy',
           secret: 'top-secret',
           grants: ['authorization_code', 'refresh_token'],
           scopes: ['any'],
-          redirectUris: [`${this.proxyUrl}/-/oauth/callback`],
+          redirectUris: [`${this.proxyUrl}/-/oidc/callback`],
         },
         {
           id: 'resource-provider',
