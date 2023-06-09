@@ -5,9 +5,9 @@ import { arrify } from './utils'
 import { configReader, Config } from '../../src/config'
 
 
-export type { Config as NgxOAuthConfig }
+export type { Config as NginxOidcConfig }
 
-export function parseNgxOAuthConfig (nginxConf: string, path = '/http/server'): Config {
+export function parseNginxOidcConfig (nginxConf: string, path = '/http/server'): Config {
   const directives = arrify(parseConf(nginxConf).get(`${path}/set`))
 
   if (directives.length < 1) {

@@ -9,8 +9,8 @@ import LogLevel from 'loglevel'
 import assert from './assert'
 import { AsyncServer } from './async-server'
 import { createClient, HttpClient, Response } from './http-client'
+import { parseNginxOidcConfig, NginxOidcConfig } from './nginx-oidc-config'
 import { createNginxVarsHook, NginxVarsHook } from './nginx-vars-hook'
-import { parseNgxOAuthConfig, NgxOAuthConfig } from './ngx-oauth-config'
 import { createOAuthServer, JWKS, OAuth2Server, OAuthOptions } from './oauth-server'
 import { createServer as createRPServer, RPOptions } from './resource-provider'
 
@@ -22,7 +22,7 @@ declare module 'mocha' {
     oauthServerUrl: string
     proxyUrl: string
     nginx: NginxServerExt
-    ngxOAuthConfig: NgxOAuthConfig,
+    nginxOidcConfig: NginxOidcConfig,
     client: HttpClient
     resp: Response<string>
   }
@@ -54,7 +54,7 @@ export const mochaHooks: RootHookObject = {
       console.error(errors.join('\n'))
     }
 
-    this.ngxOAuthConfig = parseNgxOAuthConfig(server.config)
+    this.nginxOidcConfig = parseNginxOidcConfig(server.config)
     this.proxyUrl = `https://${host}:${server.port}`
 
     this.client = createClient({
@@ -118,13 +118,13 @@ export function patchNginxConfig (patch: PatchOperation[]): void {
 
     await this.nginx.restart({ config: newConfig })
 
-    this.ngxOAuthConfig = parseNgxOAuthConfig(this.nginx.config)
+    this.nginxOidcConfig = parseNginxOidcConfig(this.nginx.config)
   })
 
   after(async function () {
     oldConfig && await this.nginx.restart({ config: oldConfig })
 
-    this.ngxOAuthConfig = parseNgxOAuthConfig(this.nginx.config)
+    this.nginxOidcConfig = parseNginxOidcConfig(this.nginx.config)
   })
 }
 

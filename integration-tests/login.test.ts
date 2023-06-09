@@ -81,19 +81,19 @@ describe('Login', () => {
         assert(resp.headers.location!.endsWith(originalUri))
       })
 
-      and(`set cookie ${CookieName.SessionId}`, ({ client: { cookies }, ngxOAuthConfig }) => {
+      and(`set cookie ${CookieName.SessionId}`, ({ client: { cookies }, nginxOidcConfig }) => {
         assert.includes(cookies.get(CookieName.SessionId), {
-          path: ngxOAuthConfig.cookiePath,
-          maxAge: ngxOAuthConfig.cookieMaxAge,
+          path: nginxOidcConfig.cookiePath,
+          maxAge: nginxOidcConfig.cookieMaxAge,
           httpOnly: true,
           secure: true,
         })
       })
 
-      and(`set cookie ${CookieName.Username}`, ({ client: { cookies }, ngxOAuthConfig }) => {
+      and(`set cookie ${CookieName.Username}`, ({ client: { cookies }, nginxOidcConfig }) => {
         assert.includes(cookies.get(CookieName.Username), {
-          path: ngxOAuthConfig.cookiePath,
-          maxAge: ngxOAuthConfig.cookieMaxAge,
+          path: nginxOidcConfig.cookiePath,
+          maxAge: nginxOidcConfig.cookieMaxAge,
           httpOnly: undefined,
           secure: true,
           value: oauth.userId,
