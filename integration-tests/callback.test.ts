@@ -108,10 +108,10 @@ describe('Callback', () => {
   })
 
 
-  describe('when OAAS returns invalid ID Token', () => {
+  describe('when OP returns invalid ID Token', () => {
 
     describe('when ID Token is signed by a different key', () => {
-      given("OAAS unexpectedly changed its JWK key", async ({ oauthServer }) => {
+      given("OP unexpectedly changed its JWK key", async ({ oauthServer }) => {
         // This JWK is different, but has the same 'kid' as the current one, so it will replace it.
         const jwk = JSON.parse(FS.readFileSync(`${__dirname}/fixtures/jwk-wrong.json`, 'utf8'))
         await oauthServer!.issuer.keys.add(jwk)
@@ -146,11 +146,11 @@ async function getValidAuthCode ({ client, oauthServerOpts: oauthOpts, oauthServ
     }),
   })
 
-  assert(resp.statusCode >= 301 && resp.statusCode <= 307, 'OAAS should return a redirect')
-  assert(resp.headers.location, 'OAAS should return a Location header')
+  assert(resp.statusCode >= 301 && resp.statusCode <= 307, 'OP should return a redirect')
+  assert(resp.headers.location, 'OP should return a Location header')
 
   const { searchParams } = new URL(resp.headers.location)
-  assert(searchParams.get('code'), 'OAAS should return query parameter "code"')
+  assert(searchParams.get('code'), 'OP should return query parameter "code"')
 
   return searchParams.get('code')!
 }

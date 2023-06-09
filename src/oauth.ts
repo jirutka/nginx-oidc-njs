@@ -118,8 +118,8 @@ function isTokenResponse(obj: unknown): obj is TokenResponse {
 
 /**
  * Requests a new access token using the given refresh token. If the refresh
- * token is invalid (OAAS returns `invalid_grant` error), it will remove it from
- * the session.
+ * token is invalid (OAuth 2.0 server returns `invalid_grant` error), it will
+ * remove it from the session.
  */
 export async function refreshToken (ctx: Context, refreshToken: string): Promise<TokenResponse> {
   try {

@@ -20,7 +20,7 @@ describe('Login', () => {
       assert(resp.statusCode === 303)
       assert(resp.headers.location!.split('?')[0] === `${oauthServerUrl}/authorize`)
     },
-    "OAAS should redirect me to the $oidc_redirect_uri": ({ resp, proxyUrl }) => {
+    "OP should redirect me to the $oidc_redirect_uri": ({ resp, proxyUrl }) => {
       assert(resp.headers.location!.split('?')[0] === `${proxyUrl}/-/oidc/callback`)
     },
   })
@@ -68,7 +68,7 @@ describe('Login', () => {
 
       when("I follow the redirect")
 
-      then("OAAS should redirect me to the $oidc_redirect_uri")
+      then("OP should redirect me to the $oidc_redirect_uri")
 
       and("the URL should contain parameter 'state' with hashed <csrfToken> and parameter 'code'", ({ resp }) => {
         assert.includes(resp.headers.location, `state=${hashCsrf(csrfToken)}`)
@@ -123,7 +123,7 @@ describe('Login', () => {
         ctx.resp = await ctx.client.get(ctx.resp.headers.location!)
       })
 
-      then("OAAS should redirect me to the $oidc_redirect_uri")
+      then("OP should redirect me to the $oidc_redirect_uri")
 
       and("the URL should contain parameter 'error=access_denied'", ({ resp }) => {
         assert.includes(resp.headers.location, 'error=access_denied')
