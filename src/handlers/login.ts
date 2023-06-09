@@ -26,7 +26,7 @@ export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
 
   log.debug?.(`login: redirecting to authorization endpoint with originalUri=${originalUri}`)
 
-  const authorizeUrl = url(`${conf.serverUrl}/authorize`, {
+  const authorizeUrl = url(conf.authorizationEndpoint, {
     response_type: 'code',
     client_id: conf.clientId,
     redirect_uri: conf.redirectUri,

@@ -6,7 +6,7 @@ import { splitWhitespace } from './utils'
 
 const configDescriptor = {
   issuer: undefined,
-  serverUrl: undefined,
+  authorizationEndpoint: undefined,
   clientId: undefined,
   scope: 'openid',
   claimRoles: '',
