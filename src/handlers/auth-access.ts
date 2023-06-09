@@ -25,7 +25,7 @@ export const auth_access: RequestHandler = async (ctx) => {
   const refreshToken = vars[Session.RefreshToken]
   if (refreshToken) {
     log.info?.(`authorize: refreshing token for user ${getCookie(Cookie.Username)}`)
-    const { access_token, id_token } = await oauth.refreshToken(ctx, refreshToken)
+    const { access_token, id_token, refresh_token } = await oauth.refreshToken(ctx, refreshToken)
 
     log.debug?.(`authorize: token refreshed, got id token: ${id_token}`)
     await validateJwtSign(ctx, id_token)
@@ -33,6 +33,9 @@ export const auth_access: RequestHandler = async (ctx) => {
 
     vars[Session.AccessToken] = access_token
     vars[Session.IdToken] = id_token
+    if (refresh_token) {
+      vars[Session.RefreshToken] = refresh_token
+    }
 
     return authorizeAccess(ctx, idToken, conf)
   }

@@ -19,11 +19,14 @@ export const auth_proxy: RequestHandler = async (ctx) => {
 
   } else if (refreshToken) {
     log.info?.(`proxy: refreshing token for user ${getCookie(Cookie.Username)}`)
-    const { access_token, id_token } = await oauth.refreshToken(ctx, refreshToken)
+    const { access_token, id_token, refresh_token } = await oauth.refreshToken(ctx, refreshToken)
 
     log.debug?.(`proxy: token refreshed, got access_token: ${access_token}`)
     vars[Session.AccessToken] = access_token
     vars[Session.IdToken] = id_token
+    if (refresh_token) {
+      vars[Session.RefreshToken] = refresh_token
+    }
 
     return send(204, undefined, {
       'Authorization': `Bearer ${access_token}`,

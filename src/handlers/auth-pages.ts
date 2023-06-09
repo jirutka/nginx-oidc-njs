@@ -61,6 +61,9 @@ export const auth_pages: RequestHandler = async (ctx) => {
 
     vars[Session.AccessToken] = tokenSet.access_token
     vars[Session.IdToken] = tokenSet.id_token
+    if (tokenSet.refresh_token) {
+      vars[Session.RefreshToken] = tokenSet.refresh_token
+    }
 
     return await authorizeAccess(ctx, idToken, accessRule)
   }
