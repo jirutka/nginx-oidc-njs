@@ -1,6 +1,6 @@
-= ngx-oauth
-:pkg-name: ngx-oauth
-:gh-name: jirutka/{pkg-name}
+= NGINX OpenID Connect
+:proj-name: nginx-oidc-njs
+:gh-name: jirutka/{proj-name}
 
 TBD
 
@@ -32,7 +32,7 @@ TBD
 +
 [source, sh, subs="+attributes"]
 git clone https://github.com/{gh-name}.git
-cd {pkg-name}
+cd {proj-name}
 
 . Install JavaScript dependencies from https://www.npmjs.com[npmjs]:
 +

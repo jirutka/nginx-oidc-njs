@@ -1,16 +1,16 @@
 {
-  "name": "ngx-oauth",
+  "name": "nginx-oidc-njs",
   "version": "0.0.0",
-  "description": "OAuth 2.0 for NGINX written in njs.",
+  "description": "OpenID Connect and OAuth 2.0 module for NGINX written in njs.",
   "author": "Jakub Jirutka <jakub@jirutka.cz>",
   "license": "MIT",
-  "homepage": "https://github.com/jirutka/ngx-oauth",
-  "bugs": "https://github.com/jirutka/ngx-oauth/issues/",
+  "homepage": "https://github.com/jirutka/nginx-oidc-njs",
+  "bugs": "https://github.com/jirutka/nginx-oidc-njs/issues/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jirutka/ngx-oauth.git"
+    "url": "https://github.com/jirutka/nginx-oidc-njs.git"
   },
-  "main": "dist/ngx-oauth.js",
+  "main": "dist/nginx-oidc.njs",
   "files": [
     "conf",
     "dist",
