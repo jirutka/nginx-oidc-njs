@@ -1,0 +1,23 @@
+name: CI
+on:
+  - push
+  - pull_request
+
+jobs:
+  test:
+    name: Test on nginx ${{ matrix.nginx }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nginx:
+          - 1.22.x
+          - 1.24.x
+          - 1.25.x
+    env:
+      NGINX_VERSION: ${{ matrix.nginx }}
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm clean-install
+      - run: npm run build
+      - run: npm run test
+      - run: npm run lint
