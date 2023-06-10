@@ -90,20 +90,6 @@ export function formatCookie (
     + (opts.cookieAttrs ? `; ${opts.cookieAttrs}` : '')
 }
 
-/**
- * Formats a cookie for `Set-Cookie` header that will clear (remove) the named cookie.
- *
- * @param name The cookie name.
- * @param opts An object with:
- *   - `cookieAttrs` - Any extra attributes as string (e.g. `'Domain=foo.xyz; SameSite=Strict'`)
- *   - `cookiePath` - `Path` attribute
- *   - `insecure` - if `true`, `Secure` will **not** be set
- * @returns A cookie string.
- */
-export function formatCookieClear (name: string, opts: FormatCookieOpts): string {
-  return formatCookie(name, '', 0, opts)
-}
-
 // This implementation is based on https://www.codeproject.com/Articles/5163931/Fast-String-Matching-with-Wildcards-Globs-and-Giti,
 // variant Non-Recursive Glob Matching with support for character classes.
 export function globMatch (glob: string, text: string): boolean {
