@@ -8,6 +8,7 @@ const configDescriptor = {
   issuer: undefined,
   authorizationEndpoint: undefined,
   clientId: undefined,
+  clientSecret: undefined,
   scope: 'openid',
   claimRoles: '',
   claimUsername: 'preferred_username',

@@ -11,7 +11,6 @@ TBD
 ** http://nginx.org/en/docs/http/ngx_http_js_module.html[ngx_http_js_module] ≥ 0.7.0
 ** https://github.com/kjdev/nginx-keyval[ngx_http_keyval_module] ≥ 0.1.0
 ** https://github.com/kjdev/nginx-auth-jwt[ngx_http_auth_jwt_module] ≥ 0.2.1
-** https://github.com/openresty/set-misc-nginx-module[ngx_http_set_misc_module] ≥ 0.32
 
 
 == Development
