@@ -76,14 +76,14 @@ export async function requestToken (ctx: Context, grantType: GrantType, value: s
 
   // NOTE: Parameters for token endpoint should be in body, but we need them
   // even in URI for caching (cache key is derived from them).
-  const { status, responseText } = await subrequest('POST', `${conf.internalLocationsPrefix}/request-token`,
+  const { status, responseBuffer } = await subrequest('POST', `${conf.internalLocationsPrefix}/request-token`,
     params,
     qs.stringify({ ...params, redirect_uri: conf.redirectUri }),
   )
   switch (status) {
     case 400:
     case 401: {
-      const data = parseJsonBody(responseText) as ErrorResponse
+      const data = parseJsonBody(responseBuffer) as ErrorResponse
 
       if (data.error === 'invalid_grant') {
         const title = grantType === 'refresh_token'
@@ -97,10 +97,10 @@ export async function requestToken (ctx: Context, grantType: GrantType, value: s
       }
     }
     case 200: {
-      const data = parseJsonBody(responseText)
+      const data = parseJsonBody(responseBuffer)
       if (!isTokenResponse(data)) {
         return reject(500, 'OAuth Server Error',
-          `OAuth server returned an invalid token response: ${responseText?.slice(0, 128)}...`)
+          `OAuth server returned an invalid token response: ${responseBuffer?.slice(0, 128)}...`)
       } else if (!data.id_token) {
         return reject(500, 'OAuth Configuration Error',
           'OAuth server returned token response without id_token.')
@@ -210,19 +210,19 @@ async function introspectToken (ctx: Context, token: string): Promise<Partial<In
 
   // Note: Query parameter is only for the subrequest caching, it's not passed
   // to the OAuth server.
-  const { status, responseText } = await subrequest('POST',
+  const { status, responseBuffer } = await subrequest('POST',
     `${conf.internalLocationsPrefix}/introspect-token`, { token }, qs.stringify({ token }),
   )
   switch (status) {
     case 401: {
-      const data = parseJsonBody(responseText) as ErrorResponse
+      const data = parseJsonBody(responseBuffer) as ErrorResponse
       return reject(500, 'OAuth Configuration Error',
         `Introspection endpoint responded with Unauthorized error: ${data.error_description}`
         + ` (${data.error}). This is most likely caused by the OAuth proxy misconfiguration.`)
     }
     // @ts-ignore falls through
     case 200: {
-      const data = parseJsonBody(responseText)
+      const data = parseJsonBody(responseBuffer)
       if ('active' in data) {
         return data as IntrospectionResponse
       }

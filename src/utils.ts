@@ -208,16 +208,18 @@ export const parseBoolean = (value: string): boolean => value === 'true'
 /**
  * Converts the given `body` into a JSON.
  *
- * @throws {TypeError} if `body` is unset or not a valid UTF8 string.
+ * @throws {TypeError} if `body` is unset or not a valid UTF-8 string.
  * @throws {SyntaxError} if `body` is not a valid JSON.
  */
-export function parseJsonBody (body?: NjsByteString): object {
+export function parseJsonBody (body?: Buffer): object {
   if (body == null) {
     throw new TypeError('requestBody has not been read')
   }
-  const str = body?.toUTF8()
-  if (str == null) {
-    throw new TypeError('requestBody is not a valid UTF8 string')
+  let str: string
+  try {
+    str = new TextDecoder('utf-8', { fatal: true }).decode(body)
+  } catch (err: any) {
+    throw new TypeError(`unable to decode requestBody as UTF-8 string: ${err.message}`)
   }
   return JSON.parse(str)
 }
