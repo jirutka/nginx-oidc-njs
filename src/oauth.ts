@@ -3,6 +3,7 @@ import qs from 'querystring'
 import type { Context } from './'
 import { Session } from './constants'
 import { reject } from './error'
+import { decodeAndValidateIdToken, IdToken, validateJwtSign } from './jwt'
 import { parseJsonBody, timestamp } from './utils'
 
 
@@ -21,6 +22,14 @@ export interface TokenResponse {
   expires_in: number
   /** A space-separated list of scopes associated with this token. */
   scope?: string
+}
+
+/**
+ * {@link TokenResponse} with added the decoded id_token payload.
+ */
+export interface DecodedTokenResponse extends TokenResponse {
+  /** The decoded ID Token payload. */
+  idToken: IdToken,
 }
 
 export interface ErrorResponse {
@@ -117,16 +126,37 @@ function isTokenResponse(obj: unknown): obj is TokenResponse {
 }
 
 /**
- * Requests a new access token using the given refresh token. If the refresh
- * token is invalid (OAuth 2.0 server returns `invalid_grant` error), it will
- * remove it from the session.
+ * Requests new tokens using the given `refreshToken`, decodes and validates the
+ * ID token. If valid, it stores the new ID token, access token and refresh
+ * token (if included in the response) in the session variables and returns the
+ * Token Response with extra field `idToken` - the decoded ID token payload.
+ *
+ * If the given `refreshToken` or the new ID token is invalid (OAuth 2.0 server
+ * returned HTTP 401), it will clear the refresh token session variable.
  */
-export async function refreshToken (ctx: Context, refreshToken: string): Promise<TokenResponse> {
+export async function refreshTokens (ctx: Context, refreshToken: string): Promise<DecodedTokenResponse> {
+  const { conf, log, vars } = ctx
   try {
-    return await requestToken(ctx, 'refresh_token', refreshToken)
+    const tokenSet = await requestToken(ctx, 'refresh_token', refreshToken) as DecodedTokenResponse
+    const { access_token, id_token, refresh_token } = tokenSet
+
+    log.debug?.(`oauth: token refreshed, got id_token=${id_token}, access_token=${access_token},`
+              + ` refresh_token=${refresh_token}`)
+
+    await validateJwtSign(ctx, id_token)
+    tokenSet.idToken = await decodeAndValidateIdToken(conf, id_token)
+
+    vars[Session.AccessToken] = access_token
+    vars[Session.IdToken] = id_token
+    if (refresh_token) {
+      vars[Session.RefreshToken] = refresh_token
+    }
+
+    return tokenSet
+
   } catch (err: any) {
     if (err.status === 401) {
-      ctx.vars[Session.RefreshToken] = undefined
+      vars[Session.RefreshToken] = undefined
     }
     throw err
   }

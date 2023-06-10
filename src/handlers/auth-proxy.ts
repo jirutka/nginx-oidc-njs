@@ -1,13 +1,13 @@
 import type { RequestHandler } from '..'
 import { Cookie, Session } from '../constants'
-import * as oauth from '../oauth'
+import { getRequestAccessToken, refreshTokens } from '../oauth'
 
 
 export const auth_proxy: RequestHandler = async (ctx) => {
   const { getCookie, log, send, vars } = ctx
   ctx.handlerType = 'auth_request'
 
-  const accessToken = oauth.getRequestAccessToken(ctx)
+  const accessToken = getRequestAccessToken(ctx)
   const refreshToken = vars[Session.RefreshToken]
 
   if (accessToken) {
@@ -19,14 +19,7 @@ export const auth_proxy: RequestHandler = async (ctx) => {
 
   } else if (refreshToken) {
     log.info?.(`proxy: refreshing token for user ${getCookie(Cookie.Username)}`)
-    const { access_token, id_token, refresh_token } = await oauth.refreshToken(ctx, refreshToken)
-
-    log.debug?.(`proxy: token refreshed, got access_token: ${access_token}`)
-    vars[Session.AccessToken] = access_token
-    vars[Session.IdToken] = id_token
-    if (refresh_token) {
-      vars[Session.RefreshToken] = refresh_token
-    }
+    const { access_token } = await refreshTokens(ctx, refreshToken)
 
     return send(204, undefined, {
       'Authorization': `Bearer ${access_token}`,

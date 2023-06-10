@@ -1,7 +1,7 @@
 import type { RequestHandler } from '..'
 import { authorizeAccess, isAnonymousAllowed } from '../access'
 import { Cookie, Session, VAR_SITE_ROOT_URI } from '../constants'
-import * as oauth from '../oauth'
+import { refreshTokens } from '../oauth'
 import { assert } from '../utils'
 import {
   findSiteRootUri,
@@ -9,7 +9,7 @@ import {
   resolveAccessRule,
   splitUriToBranchAndPagePath,
 } from '../pages'
-import { decodeAndValidateIdToken, validateJwtSign } from '../jwt'
+import { decodeAndValidateIdToken } from '../jwt'
 
 
 export const auth_pages: RequestHandler = async (ctx) => {
@@ -53,17 +53,7 @@ export const auth_pages: RequestHandler = async (ctx) => {
   const refreshToken = vars[Session.RefreshToken]
   if (refreshToken) {
     log.info?.(`authorize: refreshing token for user ${getCookie(Cookie.Username)}`)
-    const tokenSet = await oauth.refreshToken(ctx, refreshToken)
-
-    log.debug?.(`authorize: token refreshed, got id token: ${tokenSet.id_token}`)
-    await validateJwtSign(ctx, tokenSet.id_token)
-    const idToken = await decodeAndValidateIdToken(conf, tokenSet.id_token)
-
-    vars[Session.AccessToken] = tokenSet.access_token
-    vars[Session.IdToken] = tokenSet.id_token
-    if (tokenSet.refresh_token) {
-      vars[Session.RefreshToken] = tokenSet.refresh_token
-    }
+    const { idToken } = await refreshTokens(ctx, refreshToken)
 
     return await authorizeAccess(ctx, idToken, accessRule)
   }
