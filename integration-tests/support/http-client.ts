@@ -2,7 +2,7 @@ import got, { ExtendOptions, Got } from 'got'
 import { Cookie as ToughCookie, CookieJar as ToughCookieJar, Store } from 'tough-cookie'
 
 
-export type { Response } from 'got'
+export type { Options, Response } from 'got'
 
 export interface Cookie {
   key: string

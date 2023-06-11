@@ -1,13 +1,13 @@
 import createHttpError from 'http-errors'
 
-import { HttpClient } from './http-client'
+import type { HttpClient, Options } from './http-client'
 import { arrify } from './utils'
 
 
 export interface NginxVarsHook {
-  get: (name: string) => Promise<string | null>
-  set: (name: string, value: string) => Promise<void>
-  clear: (names: string | readonly string[]) => Promise<void>
+  get: (name: string, httpOptions?: Options) => Promise<string | null>
+  set: (name: string, value: string, httpOptions?: Options) => Promise<void>
+  clear: (names: string | readonly string[], httpOptions?: Options) => Promise<void>
 }
 
 /**
@@ -18,8 +18,11 @@ export const createNginxVarsHook = (
   httpClient: HttpClient,
   baseUrl: string,
 ): NginxVarsHook => ({
-  async get (name) {
+  async get (name, opts = {}) {
     const res = await httpClient.get(`${baseUrl}/${name}`, {
+      ...opts,
+      isStream: false,
+      resolveBodyOnly: false,
       responseType: 'text',
       throwHttpErrors: false,
     })
@@ -29,17 +32,19 @@ export const createNginxVarsHook = (
       default: throw createHttpError(res.statusCode)
     }
   },
-  async set (name, value) {
+  async set (name, value, opts = {}) {
     await httpClient.put(`${baseUrl}/${name}`, {
+      ...opts,
       body: value,
       headers: { 'Content-Type': 'text/plain' },
       throwHttpErrors: true,
     })
   },
-  async clear (names) {
+  async clear (names, opts = {}) {
     // TODO: make arrify compatible with readonly
     await Promise.all(arrify(names as any).map(name => {
       return httpClient.delete(`${baseUrl}/${name}`, {
+        ...opts,
         throwHttpErrors: true,
       })
     }))
