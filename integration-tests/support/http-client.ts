@@ -18,7 +18,14 @@ export interface Cookie {
 }
 
 // CookieJar has quite impractical API, so let's add some more convenient methods.
-class CookieJar extends ToughCookieJar {
+export class CookieJar extends ToughCookieJar {
+
+  static withCookies (cookies: Cookie[], currentUrl: string) {
+    const cookieJar = new CookieJar()
+    cookieJar.setAll(cookies, currentUrl)
+
+    return cookieJar
+  }
 
   clear (): void {
     this.removeAllCookiesSync()
