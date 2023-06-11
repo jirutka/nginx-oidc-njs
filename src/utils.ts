@@ -1,4 +1,4 @@
-import crypto from 'crypto'
+import webCrypto from 'crypto'
 import fs from 'fs'
 import qs from 'querystring'
 import type { ParsedUrlQueryInput } from 'querystring'
@@ -175,7 +175,7 @@ export function globMatch (glob: string, text: string): boolean {
  * Returns a hash of the given CSRF `token`.
  */
 export function hashCsrfToken (token: string): string {
-  return crypto.createHash('sha256').update(token).digest('hex')
+  return webCrypto.createHash('sha256').update(token).digest('hex')
 }
 
 /**
@@ -243,6 +243,14 @@ export function preferredMediaType <T extends readonly string[]> (
     }
   }
   return supportedTypes[0]
+}
+
+/**
+ * Returns a cryptographically secure random hex string of `bits` length.
+ */
+export function randomString (bits: number): string {
+  const array = crypto.getRandomValues(new Uint8Array(Math.floor(bits / 8)))
+  return Buffer.from(array).toString('hex')
 }
 
 /**

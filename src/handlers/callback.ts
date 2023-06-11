@@ -29,6 +29,13 @@ export const callback: RequestHandler = async (ctx) => {
     return fail(400, 'Invalid State', 'CSRF token is missing or invalid.', headers)
   }
 
+  const storedNonce = vars[Session.Nonce]
+  if (!storedNonce) {
+    return fail(400, 'Invalid Nonce',
+      'No nonce found for this request: it either expired or has been already used (replay attack).')
+  }
+  vars[Session.Nonce] = undefined
+
   if (error) {
     const description = req.args.error_description
     switch (error) {
@@ -56,7 +63,13 @@ export const callback: RequestHandler = async (ctx) => {
             + ` access_token=${tokenSet.access_token}, refresh_token=${tokenSet.refresh_token}`)
 
   await validateJwtSign(ctx, tokenSet.id_token)
-  const { username } = await decodeAndValidateIdToken(conf, tokenSet.id_token)
+  const { nonce, username } = await decodeAndValidateIdToken(conf, tokenSet.id_token)
+
+  if (nonce !== storedNonce) {
+    return fail(400, 'Invalid Nonce',
+      'Nonce from the ID token does not match the nonce associated with the state cookie:'
+      + ` '${nonce}' != '${storedNonce}'.`)
+  }
 
   log.info?.(`callback: creating session for user ${username}`)
 

@@ -3,34 +3,53 @@ import { URL, URLSearchParams } from 'node:url'
 
 import assert from './support/assert'
 import { useOAuthServer } from './support/hooks'
-import { describe, useSharedSteps } from './support/mocha'
-import { hashCsrf } from './support/utils'
+import { Cookie, CookieJar } from './support/http-client'
+import { beforeEachSuite, describe, useSharedSteps } from './support/mocha'
+import { hashCsrf, randomString } from './support/utils'
 import commonSteps from './steps'
 
-import { Cookie, CSRF_TOKEN_LENGTH, Session } from '../src/constants'
+import { Cookie as CookieName, CSRF_TOKEN_LENGTH, Session } from '../src/constants'
 
 
 describe('Callback', () => {
-  const code = 'abcdef'
-  const csrfToken = ''.padEnd(CSRF_TOKEN_LENGTH, 'xyz')
-  const csrfTokenHash = hashCsrf(csrfToken)
   const originalUri = '/index.html'
-  const state = `${csrfToken}:${originalUri}`
+
+  let csrfToken: string
+  let nonce: string
+  let stateCookie: Cookie | undefined
+
+  beforeEachSuite(() => {
+    csrfToken = randomString(CSRF_TOKEN_LENGTH)
+    nonce = randomString()
+  })
 
   const { given, when, then, and } = useSharedSteps({
     ...commonSteps,
-    "state cookie with a CSRF token is provided": ({ client, proxyUrl }) => {
-      client.cookies.set(Cookie.State, encodeURI(state), proxyUrl, {
+    "state cookie with CSRF token is provided": async ({ client, proxyUrl }) => {
+      const state = `${csrfToken}:${originalUri}`
+
+      stateCookie = client.cookies.set(CookieName.State, encodeURI(state), proxyUrl, {
         httpOnly: true,
         path: '/-/oidc/callback',
       })
     },
-    "I make a GET request to the proxy's callback endpoint with query: {query}": async (ctx, query: string) => {
-      ctx.resp = await ctx.client.get(`${ctx.proxyUrl}/-/oidc/callback?${query}`)
+    "nonce associated with the state cookie exists in keyval": async ({ nginx, proxyUrl }) => {
+      assert(stateCookie, 'stateCookie should be set')
+
+      await nginx.variables.set(Session.Nonce, nonce, {
+        // We must modify the cookie's path to make it visible for the
+        // /test-hook/variables/* resources.
+        cookieJar: CookieJar.withCookies([{ ...stateCookie, path: '/' }], proxyUrl),
+      })
+    },
+    "I make a GET request to the proxy's callback endpoint with a valid 'state' and {query}": async (ctx, query: string) => {
+      ctx.resp = await ctx.client.get(
+        `${ctx.proxyUrl}/-/oidc/callback?state=${hashCsrf(csrfToken)}&${query}`)
     },
     "I make a GET request to the proxy's callback endpoint with a valid 'code' and 'state'": async (ctx) => {
-      const code = await getValidAuthCode(ctx, csrfToken)
-      ctx.resp = await ctx.client.get(`${ctx.proxyUrl}/-/oidc/callback?code=${code}&state=${csrfTokenHash}`)
+      const code = await getValidAuthCode(ctx, csrfToken, nonce)
+      ctx.resp = await ctx.client.get(
+        `${ctx.proxyUrl}/-/oidc/callback?code=${code}&state=${hashCsrf(csrfToken)}`)
     },
   })
 
@@ -43,67 +62,112 @@ describe('Callback', () => {
   })
 
   describe('when state cookie is missing', () => {
-    when("I make a GET request to the proxy's callback endpoint with query: {query}",
-         `code=${code}&state=${csrfTokenHash}`)
+    when("I make a GET request to the proxy's callback endpoint with a valid 'code' and 'state'")
 
     then("the response status should be {status}", 400)
   })
 
   describe('when state does not match', () => {
-    given("state cookie with a CSRF token is provided")
+    given("state cookie with CSRF token is provided")
 
-    when("I make a GET request to the proxy's callback endpoint with query: {query}",
-         `code=${code}&state=wrong`)
+    and("nonce associated with the state cookie exists in keyval")
+
+    when("I make a GET request to the proxy's callback endpoint with a wrong 'state'", async (ctx) => {
+      ctx.resp = await ctx.client.get(`${ctx.proxyUrl}/-/oidc/callback?code=xyx&state=wrong`)
+    })
 
     then("the response status should be {status}", 400)
   })
 
 
-  describe('when CSRF token is correct', () => {
+  describe('when state is correct', () => {
 
-    describe('with error=access_denied', () => {
-      given("state cookie with a CSRF token is provided")
-
-      when("I make a GET request to the proxy's callback endpoint with query: {query}",
-           `error=access_denied&state=${csrfTokenHash}`)
-
-      then("the response status should be {status}", 403)
-
-      and("cookie {cookieName} should be cleared", Cookie.State)
-    })
-
-    ;['server_error', 'temporarily_unavailable'].forEach(error => {
-      describe(`with error=${error}`, () => {
-        given("state cookie with a CSRF token is provided")
-
-        when("I make a GET request to the proxy's callback endpoint with query: {query}",
-             `error=${error}&state=${csrfTokenHash}`)
-
-        then("the response status should be {status}", 502)
-      })
-    })
-
-    describe('with an invalid code', () => {
-      given("state cookie with a CSRF token is provided")
-
-      when("I make a GET request to the proxy's callback endpoint with query: {query}",
-           `code=foobar&state=${csrfTokenHash}`)
-
-      then("the response status should be {status}", 401)
-    })
-
-    describe('with a valid code', () => {
-      given("state cookie with a CSRF token is provided")
+    describe('when nonce is missing in session', () => {
+      given("state cookie with CSRF token is provided")
 
       when("I make a GET request to the proxy's callback endpoint with a valid 'code' and 'state'")
 
-      then("the proxy should redirect me to <originalUri>", ({ resp }) => {
-        assert(resp.headers.location!.endsWith(originalUri))
+      then("the response status should be {status}", 400)
+    })
+
+    describe('when nonce does not match', () => {
+      given("state cookie with CSRF token is provided")
+
+      and("a wrong nonce is associated with the state cookie in keyval", async ({ nginx, proxyUrl }) => {
+        assert(stateCookie, 'stateCookie should be set')
+
+        await nginx.variables.set(Session.Nonce, 'wrong-nonce', {
+          cookieJar: CookieJar.withCookies([{ ...stateCookie, path: '/' }], proxyUrl),
+        })
       })
 
-      and("session variable {varName} should be set", Session.IdToken)
+      when("I make a GET request to the proxy's callback endpoint with a valid 'code' and 'state'")
 
-      and("session variable {varName} should be set", Session.RefreshToken)
+      then("the response status should be {status}", 400)
+    })
+
+
+    describe('when nonce is correct', () => {
+
+      describe('with error=access_denied', () => {
+        given("state cookie with CSRF token is provided")
+
+        and("nonce associated with the state cookie exists in keyval")
+
+        when("I make a GET request to the proxy's callback endpoint with a valid 'state' and {query}",
+             'error=access_denied')
+
+        then("the response status should be {status}", 403)
+
+        and("cookie {cookieName} should be cleared", CookieName.State)
+      })
+
+      ;['server_error', 'temporarily_unavailable'].forEach(error => {
+        describe(`with error=${error}`, () => {
+          given("state cookie with CSRF token is provided")
+
+          and("nonce associated with the state cookie exists in keyval")
+
+          when("I make a GET request to the proxy's callback endpoint with a valid 'state' and {query}",
+               `error=${error}`)
+
+          then("the response status should be {status}", 502)
+        })
+      })
+
+      describe('with an invalid code', () => {
+        given("state cookie with CSRF token is provided")
+
+        and("nonce associated with the state cookie exists in keyval")
+
+        when("I make a GET request to the proxy's callback endpoint with a valid 'state' and {query}",
+            'code=invalid-code')
+
+        then("the response status should be {status}", 401)
+      })
+
+      describe('with a valid code', () => {
+        given("state cookie with CSRF token is provided")
+
+        and("nonce associated with the state cookie exists in keyval")
+
+        when("I make a GET request to the proxy's callback endpoint with a valid 'code' and 'state'")
+
+        then("the proxy should redirect me to <originalUri>", ({ resp }) => {
+          assert(resp.headers.location!.endsWith(originalUri))
+        })
+
+        and("session variable {varName} should be set", Session.IdToken)
+
+        and("session variable {varName} should be set", Session.RefreshToken)
+
+        and(`variable ${Session.Nonce} associated with the state cookie should be cleared`, async ({ nginx, proxyUrl }) => {
+          assert(stateCookie, 'stateCookie should be set')
+          const cookieJar = CookieJar.withCookies([{ ...stateCookie, path: '/' }], proxyUrl)
+
+          assert(!await nginx.variables.get(Session.Nonce, { cookieJar }))
+        })
+      })
     })
   })
 
@@ -117,7 +181,9 @@ describe('Callback', () => {
         await oauthServer!.issuer.keys.add(jwk)
       })
 
-      and("state cookie with a CSRF token is provided")
+      and("state cookie with CSRF token is provided")
+
+      and("nonce associated with the state cookie exists in keyval")
 
       when("I make a GET request to the proxy's callback endpoint with a valid 'code' and 'state'")
 
@@ -132,7 +198,8 @@ describe('Callback', () => {
 })
 
 
-async function getValidAuthCode ({ client, oauthServerOpts: oauthOpts, oauthServerUrl: oauthUrl }: Mocha.Context, csrfToken: string) {
+async function getValidAuthCode (ctx: Mocha.Context, state: string, nonce: string) {
+  const { client, oauthServerOpts: oauthOpts, oauthServerUrl: oauthUrl } = ctx
   const oauth = oauthOpts.clients[0]
 
   const resp = await client.get(`${oauthUrl}/authorize`, {
@@ -140,7 +207,8 @@ async function getValidAuthCode ({ client, oauthServerOpts: oauthOpts, oauthServ
       response_type: 'code',
       client_id: oauth.id,
       redirect_uri: oauth.redirectUris![0],
-      state: csrfToken,
+      state,
+      nonce,
       // XXX: This can be removed after https://github.com/axa-group/oauth2-mock-server/pull/241 is merged.
       scope: 'openid',
     }),

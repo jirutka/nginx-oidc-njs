@@ -1,11 +1,10 @@
 import qs from 'querystring'
 
 import type { RequestHandler } from '../'
-import { CSRF_TOKEN_LENGTH, Cookie } from '../constants'
-import { assert, extractUrlPath, formatCookie, hashCsrfToken, url } from '../utils'
+import { CSRF_TOKEN_LENGTH, Cookie, Session } from '../constants'
+import { assert, extractUrlPath, formatCookie, hashCsrfToken, randomString, url } from '../utils'
 
 
-// TODO: Add nounce
 export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
   const requestUri = vars.request_uri
   const isUriRewritten = !requestUri?.startsWith(req.uri)
@@ -26,15 +25,22 @@ export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
 
   log.debug?.(`login: redirecting to authorization endpoint with originalUri=${originalUri}`)
 
+  const nonce = randomString(128)
+
   const authorizeUrl = url(conf.authorizationEndpoint, {
     response_type: 'code',
     client_id: conf.clientId,
     redirect_uri: conf.redirectUri,
     scope: conf.scope,
     state: hashCsrfToken(csrfToken),
+    nonce,
   })
   const state = `${csrfToken}:${originalUri}`
   const cookiePath = extractUrlPath(conf.redirectUri)
+
+  // This sets the key with which the nonce will be associated.
+  vars.oidc_auth_state = state
+  vars[`${Session.Nonce}_new`] = nonce
 
   return send(303, authorizeUrl, {
     'Set-Cookie': [

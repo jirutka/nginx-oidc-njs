@@ -7,6 +7,14 @@ export function arrify <T> (value: T | T[] | undefined | null): T[] {
     : [value]
 }
 
+export function randomString (length = 5): string {
+  let str = ''
+  while (str.length < length) {
+    str += (Math.random() + 1).toString(36).substring(2, 7)
+  }
+  return str.substring(0, length)
+}
+
 export function removeBy <T> (array: T[], predicate: (item: T) => boolean): number {
   let n = 0
   let idx = -1
