@@ -1,9 +1,11 @@
 import assert from './support/assert'
 import { defineSteps } from './support/shared-steps'
 
+import { Cookie, Session } from '../src/constants'
 
-const oauthCookies = ['oidc_username', 'oidc_session_id'] as const
-const sessionVariables = ['oidc_access_token', 'oidc_id_token', 'oidc_refresh_token'] as const
+
+const sessionCookies = [Cookie.SessionId, Cookie.Username]
+const sessionVariables = [Session.AccessToken, Session.IdToken, Session.RefreshToken]
 
 export default defineSteps({
   "I'm not logged in (no session and cookies exist)": ({ client, nginx }) => {
@@ -15,7 +17,7 @@ export default defineSteps({
 
     await client.post(`${proxyUrl}/-/oidc/login`, { followRedirect: true })
 
-    for (const cookieName of oauthCookies) {
+    for (const cookieName of sessionCookies) {
       assert(client.cookies.get(cookieName))
     }
     for (const varName of sessionVariables) {
@@ -48,7 +50,7 @@ export default defineSteps({
     assert(!await nginx.variables.get(varName))
   },
   "no session variables and OAuth cookies should be set": async ({ client, nginx }) => {
-    for (const cookieName of oauthCookies) {
+    for (const cookieName of sessionCookies) {
       assert(!client.cookies.get(cookieName))
     }
     for (const varName of sessionVariables) {
