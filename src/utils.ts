@@ -61,7 +61,6 @@ export function extractUrlPath (url: string): string {
 type FormatCookieOpts = {
   cookieAttrs?: string,
   cookiePath: string,
-  insecure?: boolean,
 }
 
 /**
@@ -73,7 +72,6 @@ type FormatCookieOpts = {
  * @param opts An object with:
  *   - `cookieAttrs` - Any extra attributes as string (e.g. `'Domain=foo.xyz; SameSite=Strict'`)
  *   - `cookiePath` - `Path` attribute
- *   - `insecure` - if `true`, `Secure` will **not** be set
  * @param extra Any extra attributes as string that will be appended to the cookie value.
  * @returns A cookie string.
  */
@@ -85,7 +83,6 @@ export function formatCookie (
   extra: string = '',
 ): string {
   return `${name}=${value}; Path=${opts.cookiePath}; Max-Age=${maxAge}`
-    + (opts.insecure ? '' : '; Secure')
     + (extra ? `; ${extra}` : '')
     + (opts.cookieAttrs ? `; ${opts.cookieAttrs}` : '')
 }
