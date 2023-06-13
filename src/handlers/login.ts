@@ -9,8 +9,8 @@ export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
   const requestUri = vars.request_uri
   const isUriRewritten = !requestUri?.startsWith(req.uri)
 
-  // Allow POST for internal requests only (unless conf.insecure is enabled).
-  if (!isUriRewritten && req.method !== 'POST' && !conf.insecure) {
+  // Allow POST for internal requests only.
+  if (!isUriRewritten && req.method !== 'POST') {
     return send(405, undefined, { Allow: 'POST always' })
   }
 

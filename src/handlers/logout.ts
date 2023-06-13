@@ -6,7 +6,7 @@ import { formatCookie } from '../utils'
 
 
 export const logout: RequestHandler = ({ conf, getCookie, log, req, send, vars }) => {
-  if (req.method !== 'POST' && !conf.insecure) {
+  if (req.method !== 'POST') {
     return send(405, undefined, { Allow: 'POST always' })
   }
   const nextUri = req.args.nextUri ? qs.unescape(req.args.nextUri) : conf.cookiePath
