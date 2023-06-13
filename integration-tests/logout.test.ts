@@ -5,7 +5,7 @@ import commonSteps from './steps'
 
 
 describe('Logout', () => {
-  const cookiePath = '/'
+  const postLogoutRedirectUri = '/'
   const nextUri = encodeURI('/some/path.html')
 
   const { given, when, then } = useSharedSteps(commonSteps)
@@ -44,9 +44,9 @@ describe('Logout', () => {
 
       when("I make a POST request to proxy {path}", '/-/oidc/logout')
 
-      then("the proxy should redirect me to <conf.cookiePath>", async ({ resp }) => {
+      then("the proxy should redirect me to <conf.postLogoutRedirectUri>", async ({ resp }) => {
         assert(resp.statusCode === 303)
-        assert(resp.headers.location!.endsWith(cookiePath))
+        assert(resp.headers.location!.endsWith(postLogoutRedirectUri))
       })
 
       when("I follow the redirect")

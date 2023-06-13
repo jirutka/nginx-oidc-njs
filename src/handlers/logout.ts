@@ -9,7 +9,9 @@ export const logout: RequestHandler = ({ conf, getCookie, log, req, send, vars }
   if (req.method !== 'POST') {
     return send(405, undefined, { Allow: 'POST always' })
   }
-  const nextUri = req.args.nextUri ? qs.unescape(req.args.nextUri) : conf.cookiePath
+  const nextUri = req.args.nextUri
+    ? qs.unescape(req.args.nextUri)
+    : conf.postLogoutRedirectUri
 
   log.info?.(`logout: logging out user ${getCookie(Cookie.Username)}`)
 

@@ -13,6 +13,7 @@ const configDescriptor = {
   claimRoles: '',
   claimUsername: 'preferred_username',
   redirectUri: '/-/oidc/callback',
+  postLogoutRedirectUri: '/',
   internalLocationsPrefix: '/-/internal',
   cookieAttrs: 'Secure; SameSite=Strict',
   cookieMaxAge: 2592000,  // 30 days
