@@ -65,6 +65,7 @@ describe('Login', () => {
           path: '/-/oidc/callback',
           maxAge: 120,
           httpOnly: true,
+          sameSite: 'none',
         })
         stateCookie = cookies.get(CookieName.State)!
 

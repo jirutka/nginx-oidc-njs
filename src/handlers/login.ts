@@ -47,6 +47,9 @@ export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
     maxAge: 120,
     path: extractUrlPath(conf.redirectUri),
     httpOnly: true,
+    // The cookie needs to be read when the OIDC Provider (a different site)
+    // posts an authorization code to the callback endpoint.
+    sameSite: 'none',
   })
 
   return send(303, authorizeUrl, { 'Set-Cookie': [stateCookie] })
