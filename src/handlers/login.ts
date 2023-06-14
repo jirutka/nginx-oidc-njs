@@ -9,7 +9,7 @@ export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
   const requestUri = vars.request_uri
   const isUriRewritten = !requestUri?.startsWith(req.uri)
 
-  // Allow POST for internal requests only.
+  // Internal requests can use GET.
   if (!isUriRewritten && req.method !== 'POST') {
     return send(405, undefined, { Allow: 'POST always' })
   }
