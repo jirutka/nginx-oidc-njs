@@ -17,7 +17,7 @@ export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
   const originalUri =
     req.args.original_uri ? req.args.original_uri
     : requestUri && isUriRewritten ? qs.escape(requestUri)
-    : conf.cookiePath
+    : '/'  // XXX: parametrize?
 
   const csrfToken = req.variables.request_id!
   assert(csrfToken.length === CSRF_TOKEN_LENGTH,
