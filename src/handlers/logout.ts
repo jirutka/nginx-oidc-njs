@@ -2,7 +2,7 @@ import qs from 'querystring'
 
 import type { RequestHandler } from '../'
 import { Cookie, Session } from '../constants'
-import { formatCookie } from '../utils'
+import { formatCookieClear } from '../cookie'
 
 
 export const logout: RequestHandler = ({ conf, getCookie, log, req, send, vars }) => {
@@ -21,8 +21,8 @@ export const logout: RequestHandler = ({ conf, getCookie, log, req, send, vars }
 
   return send(303, nextUri, {
     'Set-Cookie': [
-      formatCookie(Cookie.SessionId, '', 0, conf),  // delete cookie
-      formatCookie(Cookie.Username, '', 0, conf),  // delete cookie
+      formatCookieClear(Cookie.SessionId, conf.cookieAttrs),
+      formatCookieClear(Cookie.Username, conf.cookieAttrs),
     ],
   })
 }

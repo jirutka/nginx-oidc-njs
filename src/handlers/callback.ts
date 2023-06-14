@@ -1,8 +1,9 @@
 import type { RequestHandler } from '..'
 import { Cookie, CSRF_TOKEN_LENGTH, Session } from '../constants'
+import { formatCookie, formatCookieClear } from '../cookie'
 import { decodeAndValidateIdToken, validateJwtSign } from '../jwt'
 import * as oauth  from '../oauth'
-import { assert, extractUrlPath, formatCookie, hashCsrfToken } from '../utils'
+import { assert, extractUrlPath, hashCsrfToken } from '../utils'
 
 
 export const callback: RequestHandler = async (ctx) => {
@@ -15,8 +16,10 @@ export const callback: RequestHandler = async (ctx) => {
 
   const storedState = getCookie(Cookie.State, true)
 
-  const cookiePath = extractUrlPath(conf.redirectUri)
-  const clearStateCookie = formatCookie(Cookie.State, '', 0, { ...conf, cookiePath }, 'HttpOnly')
+  const clearStateCookie = formatCookieClear(Cookie.State, {
+    ...conf.cookieAttrs,
+    path: extractUrlPath(conf.redirectUri),
+  })
   const headers: NginxHeadersOut = { 'Set-Cookie': [clearStateCookie] }
 
   if (!storedState || storedState.length < CSRF_TOKEN_LENGTH) {
@@ -80,8 +83,8 @@ export const callback: RequestHandler = async (ctx) => {
 
   return send(303, originalUri, {
     'Set-Cookie': [
-      formatCookie(Cookie.SessionId, sessionId, conf.cookieMaxAge, conf, 'HttpOnly'),
-      formatCookie(Cookie.Username, username, conf.cookieMaxAge, conf),
+      formatCookie(Cookie.SessionId, sessionId, { ...conf.cookieAttrs, httpOnly: true }),
+      formatCookie(Cookie.Username, username, conf.cookieAttrs),
       clearStateCookie,
     ],
   })

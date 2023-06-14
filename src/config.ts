@@ -1,5 +1,6 @@
 import { ALLOW_AUTHENTICATED, BasicRole } from './access'
 import { createConfigReader, DeriveConfigType } from './config-reader'
+import { SetCookieAttrs, parseCookieAttrs } from './cookie'
 import { parseLogLevel, LogLevel } from './logger'
 import { splitWhitespace } from './utils'
 
@@ -15,9 +16,16 @@ const configDescriptor = {
   redirectUri: '/-/oidc/callback',
   postLogoutRedirectUri: '/',
   internalLocationsPrefix: '/-/internal',
-  cookieAttrs: 'Secure; SameSite=Strict',
-  cookieMaxAge: 2592000,  // 30 days
-  cookiePath: '/',
+  cookieAttrs: {
+    // max-age=2592000; path=/; secure; samesite=strict
+    default: {
+      maxAge: 2592000,  // 30 days
+      path: '/',
+      secure: true,
+      sameSite: 'strict',
+    } as SetCookieAttrs,
+    parser: parseCookieAttrs,
+  },
   logLevel: {
     default: LogLevel.error,
     parser: parseLogLevel,

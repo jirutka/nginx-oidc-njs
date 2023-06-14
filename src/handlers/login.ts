@@ -2,7 +2,8 @@ import qs from 'querystring'
 
 import type { RequestHandler } from '../'
 import { CSRF_TOKEN_LENGTH, Cookie, Session } from '../constants'
-import { assert, extractUrlPath, formatCookie, hashCsrfToken, randomString, url } from '../utils'
+import { formatCookie } from '../cookie'
+import { assert, extractUrlPath, hashCsrfToken, randomString, url } from '../utils'
 
 
 export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
@@ -36,15 +37,17 @@ export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
     nonce,
   })
   const state = `${csrfToken}:${originalUri}`
-  const cookiePath = extractUrlPath(conf.redirectUri)
 
   // This sets the key with which the nonce will be associated.
   vars.oidc_auth_state = state
   vars[`${Session.Nonce}_new`] = nonce
 
-  return send(303, authorizeUrl, {
-    'Set-Cookie': [
-      formatCookie(Cookie.State, state, 120, { ...conf, cookiePath }, 'HttpOnly'),
-    ],
+  const stateCookie = formatCookie(Cookie.State, state, {
+    ...conf.cookieAttrs,
+    maxAge: 120,
+    path: extractUrlPath(conf.redirectUri),
+    httpOnly: true,
   })
+
+  return send(303, authorizeUrl, { 'Set-Cookie': [stateCookie] })
 }

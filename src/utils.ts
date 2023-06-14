@@ -58,35 +58,6 @@ export function extractUrlPath (url: string): string {
   return url.match(/^https?:\/\/[^/\s]+(\/[^?#\s]+)/)?.[1] ?? url
 }
 
-type FormatCookieOpts = {
-  cookieAttrs?: string,
-  cookiePath: string,
-}
-
-/**
- * Formats a cookie for `Set-Cookie` header.
- *
- * @param name The cookie name.
- * @param value The cookie value.
- * @param maxAge Number of seconds until the cookie expires.
- * @param opts An object with:
- *   - `cookieAttrs` - Any extra attributes as string (e.g. `'Domain=foo.xyz; SameSite=Strict'`)
- *   - `cookiePath` - `Path` attribute
- * @param extra Any extra attributes as string that will be appended to the cookie value.
- * @returns A cookie string.
- */
-export function formatCookie (
-  name: string,
-  value: string,
-  maxAge: number,
-  opts: FormatCookieOpts,
-  extra: string = '',
-): string {
-  return `${name}=${value}; Path=${opts.cookiePath}; Max-Age=${maxAge}`
-    + (extra ? `; ${extra}` : '')
-    + (opts.cookieAttrs ? `; ${opts.cookieAttrs}` : '')
-}
-
 // This implementation is based on https://www.codeproject.com/Articles/5163931/Fast-String-Matching-with-Wildcards-Globs-and-Giti,
 // variant Non-Recursive Glob Matching with support for character classes.
 export function globMatch (glob: string, text: string): boolean {

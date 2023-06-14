@@ -58,13 +58,13 @@ describe('Login', () => {
       then("the proxy should redirect me to $oidc_server_url/authorize")
 
       and(`should set ${CookieName.State} cookie with <csrfToken> and <originalUri>`, (ctx) => {
-        const { client: { cookies } } = ctx
+        const { client: { cookies }, nginxOidcConfig } = ctx
 
         assert.includes(cookies.get(CookieName.State), {
+          ...nginxOidcConfig.cookieAttrs,
           path: '/-/oidc/callback',
           maxAge: 120,
           httpOnly: true,
-          secure: true,
         })
         stateCookie = cookies.get(CookieName.State)!
 
@@ -105,19 +105,14 @@ describe('Login', () => {
 
       and(`set cookie ${CookieName.SessionId}`, ({ client: { cookies }, nginxOidcConfig }) => {
         assert.includes(cookies.get(CookieName.SessionId), {
-          path: nginxOidcConfig.cookiePath,
-          maxAge: nginxOidcConfig.cookieMaxAge,
+          ...nginxOidcConfig.cookieAttrs,
           httpOnly: true,
-          secure: true,
         })
       })
 
       and(`set cookie ${CookieName.Username}`, ({ client: { cookies }, nginxOidcConfig }) => {
         assert.includes(cookies.get(CookieName.Username), {
-          path: nginxOidcConfig.cookiePath,
-          maxAge: nginxOidcConfig.cookieMaxAge,
-          httpOnly: undefined,
-          secure: true,
+          ...nginxOidcConfig.cookieAttrs,
           value: oauth.userId,
         })
       })
