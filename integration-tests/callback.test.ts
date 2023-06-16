@@ -30,6 +30,7 @@ describe('Callback', () => {
 
       stateCookie = client.cookies.set(CookieName.State, encodeURI(state), proxyUrl, {
         httpOnly: true,
+        maxAge: 120,
         path: '/-/oidc/callback',
       })
     },

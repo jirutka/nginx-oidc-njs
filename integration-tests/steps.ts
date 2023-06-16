@@ -40,8 +40,9 @@ export default defineSteps({
   "the response should set cookie {cookieName}": ({ client }, cookieName: string) => {
     assert(client.cookies.get(cookieName))
   },
-  "cookie {cookieName} should be cleared": ({ client }, cookieName: string) => {
-    assert(!client.cookies.get(cookieName)?.maxAge)
+  "cookie {cookieName} should be cleared": ({ client: { cookies } }, cookieName: string) => {
+    assert(cookies.get(cookieName))
+    assert(cookies.get(cookieName)!.maxAge === 0)
   },
   "session variable {varName} should be set": async ({ nginx }, varName: string) => {
     assert(await nginx.variables.get(varName))
