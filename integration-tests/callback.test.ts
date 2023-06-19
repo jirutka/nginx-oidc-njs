@@ -211,8 +211,6 @@ async function getValidAuthCode (ctx: Mocha.Context, state: string, nonce: strin
       redirect_uri: oauth.redirectUris![0],
       state,
       nonce,
-      // XXX: This can be removed after https://github.com/axa-group/oauth2-mock-server/pull/241 is merged.
-      scope: 'openid',
     }),
   })
 

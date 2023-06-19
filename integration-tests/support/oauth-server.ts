@@ -1,5 +1,5 @@
 import { urlencoded } from 'body-parser'
-import type { Request } from 'express'
+import type { Express, Request } from 'express'
 import {
   Events,
   JWK,
@@ -70,7 +70,7 @@ export async function createOAuthServer (opts: OAuthOptions): Promise<OAuth2Serv
   const server = new OAuth2Server()
 
   // Prepend urlencoded middleware needed for the introspect endpoint.
-  const { requestHandler  } = server.service
+  const requestHandler = server.service.requestHandler as Express
   requestHandler.use(urlencoded({ extended: false }))
   requestHandler._router.stack.unshift(requestHandler._router.stack.pop())
 
