@@ -5,10 +5,11 @@ import { useOAuthServer } from './support/hooks'
 import { Cookie, CookieJar } from './support/http-client'
 import { describe, useSharedSteps } from './support/mocha'
 import * as oauth from './support/oauth-server'
-import { hashCsrf } from './support/utils'
+import { sha256 } from './support/utils'
 import commonSteps from './steps'
 
 import { Cookie as CookieName, Session } from '../src/constants'
+import type { AuthState } from '../src/oauth'
 
 
 // Note: This tests also the callback handler.
@@ -43,7 +44,6 @@ describe('Login', () => {
   describe('using POST method', () => {
 
     describe('allow authorization', () => {
-      let csrfToken: string
       let nonce: string
       let stateCookie: Cookie
 
@@ -57,44 +57,45 @@ describe('Login', () => {
 
       then("the proxy should redirect me to $oidc_server_url/authorize")
 
-      and(`should set ${CookieName.State} cookie with <csrfToken> and <originalUri>`, (ctx) => {
+      and(`should set ${CookieName.StateId} cookie with generated <stateId>`, (ctx) => {
         const { client: { cookies }, nginxOidcConfig } = ctx
 
-        assert.includes(cookies.get(CookieName.State), {
+        assert.includes(cookies.get(CookieName.StateId), {
           ...nginxOidcConfig.cookieAttrs,
           path: '/-/oidc/callback',
           maxAge: 120,
           httpOnly: true,
           sameSite: 'none',
         })
-        stateCookie = cookies.get(CookieName.State)!
-
-        assert(stateCookie.value.split(':', 2)[1] === originalUri)
-        assert((csrfToken = stateCookie.value.split(':', 2)[0]))
+        stateCookie = cookies.get(CookieName.StateId)!
       })
 
-      and("the URL should contain 'state' with hashed <csrfToken> and a 'nonce'", ({ resp }) => {
+      and(`the URL should contain hashed <stateId> and generated <nonce>`, ({ resp }) => {
         const locationUrl = new URL(resp.headers.location!)
-        assert(locationUrl.searchParams.get('state') === hashCsrf(csrfToken))
+        assert(locationUrl.searchParams.get('state') === sha256(stateCookie.value))
         assert((nonce = locationUrl.searchParams.get('nonce')!))
       })
 
-      and(`the nonce should be stored in keyval by the ${CookieName.State} cookie`, async ({ nginx, proxyUrl }) => {
-        const storedNonce = await nginx.variables.get(Session.Nonce, {
+      and(`should add <nonce> and <originalUri> to the session store identified by <stateId>`, async (ctx) => {
+        const authState = await ctx.nginx.variables.get(Session.AuthState, {
           // We must modify the cookie's path to make it visible for the
           // /test-hook/variables/* resources.
-          cookieJar: CookieJar.withCookies([{ ...stateCookie, path: '/' }], proxyUrl),
+          cookieJar: CookieJar.withCookies([{ ...stateCookie, path: '/' }], ctx.proxyUrl),
         })
-        assert(storedNonce === nonce,
-          'nonce stored in keyval and in authorization redirect must be the same')
+        assert(authState)
+
+        const storedState = JSON.parse(authState) as AuthState
+        assert(storedState.nonce === nonce,
+          'nonce stored in session and in authorization redirect must be the same')
+        assert(storedState.url === originalUri)
       })
 
       when("I follow the redirect")
 
       then("OP should redirect me to the $oidc_redirect_uri")
 
-      and("the URL should contain parameter 'state' with hashed <csrfToken> and parameter 'code'", ({ resp }) => {
-        assert.includes(resp.headers.location, `state=${hashCsrf(csrfToken)}`)
+      and("the URL should contain hashed <stateId> and parameter 'code'", ({ resp }) => {
+        assert.includes(resp.headers.location, `state=${sha256(stateCookie.value)}`)
         assert.includes(resp.headers.location, 'code=')
       })
 

@@ -25,7 +25,8 @@ export function removeBy <T> (array: T[], predicate: (item: T) => boolean): numb
   return n
 }
 
-export function hashCsrf (value: string): string {
+// Keep in sync with sha256() in ../../src/utils.ts.
+export function sha256 (value: string): string {
   return crypto.createHash('sha256').update(value).digest('hex')
 }
 

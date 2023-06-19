@@ -1,43 +1,43 @@
 import type { RequestHandler } from '..'
-import { Cookie, CSRF_TOKEN_LENGTH, Session } from '../constants'
+import { Cookie, Session } from '../constants'
 import { formatCookie, formatCookieClear } from '../cookie'
 import { decodeAndValidateIdToken, validateJwtSign } from '../jwt'
-import * as oauth  from '../oauth'
-import { assert, extractUrlPath, hashCsrfToken } from '../utils'
+import { AuthState, requestToken }  from '../oauth'
+import { assert, extractUrlPath, sha256 } from '../utils'
 
 
 export const callback: RequestHandler = async (ctx) => {
   const { conf, fail, getCookie, log, req, send, vars } = ctx
-  const { code, error, state } = req.args
+  const { code, error, state: argState } = req.args
 
   if (!code && !error) {
     return fail(400, 'Bad Request', "Missing query parameter 'code' or 'error'.")
   }
 
-  const storedState = getCookie(Cookie.State, true)
+  const cookieState = getCookie(Cookie.StateId)
+  if (!cookieState) {
+    return fail(400, 'Invalid State', `Missing ${Cookie.StateId} cookie.`)
+  }
 
-  const clearStateCookie = formatCookieClear(Cookie.State, {
+  const clearStateCookie = formatCookieClear(Cookie.StateId, {
     ...conf.cookieAttrs,
     path: extractUrlPath(conf.redirectUri),
   })
   const headers: NginxHeadersOut = { 'Set-Cookie': [clearStateCookie] }
 
-  if (!storedState || storedState.length < CSRF_TOKEN_LENGTH) {
-    return fail(400, 'Invalid State', 'Missing or corrupted state cookie.', headers)
-  }
-  const storedCsrf = storedState.slice(0, CSRF_TOKEN_LENGTH)
-  const originalUri = storedState.slice(CSRF_TOKEN_LENGTH + 1) || '/'
-
-  if (state !== hashCsrfToken(storedCsrf)) {
-    return fail(400, 'Invalid State', 'CSRF token is missing or invalid.', headers)
+  if (argState !== sha256(cookieState)) {
+    return fail(400, 'Invalid State', 'The state parameter is missing or invalid.', headers)
   }
 
-  const storedNonce = vars[Session.Nonce]
-  if (!storedNonce) {
-    return fail(400, 'Invalid Nonce',
-      'No nonce found for this request: it either expired or has been already used (replay attack).')
+  const sessionState = vars[Session.AuthState]
+  if (!sessionState) {
+    return fail(400, 'Invalid State',
+      'No stored state and nonce was found for this authorization response:'
+      + ' it either expired or has been already used (replay attack).', headers)
   }
-  vars[Session.Nonce] = undefined
+  vars[Session.AuthState] = undefined
+
+  const state = AuthState.decode(sessionState)
 
   if (error) {
     const description = req.args.error_description
@@ -61,17 +61,17 @@ export const callback: RequestHandler = async (ctx) => {
   }
   log.debug?.(`callback: requesting tokens using auth code: ${code}`)
 
-  const tokenSet = await oauth.requestToken(ctx, 'authorization_code', code)
+  const tokenSet = await requestToken(ctx, 'authorization_code', code)
   log.debug?.(`callback: received id_token=${tokenSet.id_token},`
             + ` access_token=${tokenSet.access_token}, refresh_token=${tokenSet.refresh_token}`)
 
   await validateJwtSign(ctx, tokenSet.id_token)
   const { nonce, username } = await decodeAndValidateIdToken(conf, tokenSet.id_token)
 
-  if (nonce !== storedNonce) {
+  if (nonce !== state.nonce) {
     return fail(400, 'Invalid Nonce',
       'Nonce from the ID token does not match the nonce associated with the state cookie:'
-      + ` '${nonce}' != '${storedNonce}'.`)
+      + ` '${nonce}' != '${state.nonce}'.`)
   }
 
   log.info?.(`callback: creating session for user ${username}`)
@@ -81,7 +81,7 @@ export const callback: RequestHandler = async (ctx) => {
   vars[`${Session.IdToken}_new`] = tokenSet.id_token
   vars[`${Session.RefreshToken}_new`] = tokenSet.refresh_token!
 
-  return send(303, originalUri, {
+  return send(303, state.url, {
     'Set-Cookie': [
       formatCookie(Cookie.SessionId, sessionId, { ...conf.cookieAttrs, httpOnly: true }),
       formatCookie(Cookie.Username, username, conf.cookieAttrs),

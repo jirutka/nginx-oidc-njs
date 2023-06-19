@@ -4,14 +4,14 @@ export const CSRF_TOKEN_LENGTH = 32
 export const VAR_SITE_ROOT_URI = 'pages_site_root_uri'
 
 export const enum Cookie {
-  State = 'oidc_state',
-  Username = 'oidc_username',
+  StateId = 'oidc_state_id',
   SessionId = 'oidc_session_id',
+  Username = 'oidc_username',
 }
 
 export const enum Session {
   AccessToken = 'oidc_access_token',
+  AuthState = 'oidc_auth_state',
   IdToken = 'oidc_id_token',
-  Nonce = 'oidc_nonce',
   RefreshToken = 'oidc_refresh_token',
 }

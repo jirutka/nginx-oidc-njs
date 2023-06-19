@@ -1,9 +1,8 @@
-import qs from 'querystring'
-
 import type { RequestHandler } from '../'
-import { CSRF_TOKEN_LENGTH, Cookie, Session } from '../constants'
+import { Cookie, Session } from '../constants'
 import { formatCookie } from '../cookie'
-import { assert, extractUrlPath, hashCsrfToken, randomString, url } from '../utils'
+import { AuthState } from '../oauth'
+import { assert, extractUrlPath, randomString, sha256, timestamp, url } from '../utils'
 
 
 export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
@@ -17,15 +16,12 @@ export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
 
   const originalUri =
     req.args.original_uri ? req.args.original_uri
-    : requestUri && isUriRewritten ? qs.escape(requestUri)
+    : requestUri && isUriRewritten ? requestUri
     : '/'  // XXX: parametrize?
-
-  const csrfToken = req.variables.request_id!
-  assert(csrfToken.length === CSRF_TOKEN_LENGTH,
-    `request_id is expected to be ${CSRF_TOKEN_LENGTH} chars long, but got: '${csrfToken}'`)
 
   log.debug?.(`login: redirecting to authorization endpoint with originalUri=${originalUri}`)
 
+  const stateId = assert(vars.request_id, 'request_id is not set')
   const nonce = randomString(128)
 
   const authorizeUrl = url(conf.authorizationEndpoint, {
@@ -33,16 +29,17 @@ export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
     client_id: conf.clientId,
     redirect_uri: conf.redirectUri,
     scope: conf.scope,
-    state: hashCsrfToken(csrfToken),
+    state: sha256(stateId),
     nonce,
   })
-  const state = `${csrfToken}:${originalUri}`
 
-  // This sets the key with which the nonce will be associated.
-  vars.oidc_auth_state = state
-  vars[`${Session.Nonce}_new`] = nonce
+  vars[`${Session.AuthState}_new`] = AuthState.encode({
+    exp: timestamp() + 120,
+    url: originalUri,
+    nonce,
+  })
 
-  const stateCookie = formatCookie(Cookie.State, state, {
+  const stateCookie = formatCookie(Cookie.StateId, stateId, {
     ...conf.cookieAttrs,
     maxAge: 120,
     path: extractUrlPath(conf.redirectUri),
@@ -51,6 +48,5 @@ export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
     // posts an authorization code to the callback endpoint.
     sameSite: 'none',
   })
-
   return send(303, authorizeUrl, { 'Set-Cookie': [stateCookie] })
 }

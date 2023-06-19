@@ -2,7 +2,7 @@ import qs from 'querystring'
 
 import type { Context } from './'
 import { Session } from './constants'
-import { reject } from './error'
+import { HttpError, reject } from './error'
 import { decodeAndValidateIdToken, IdToken, validateJwtSign } from './jwt'
 import { parseJsonBody, timestamp } from './utils'
 
@@ -53,6 +53,49 @@ export interface IntrospectionResponse {
   username: string
   /** Number of seconds since 1970-01-01 UTC, indicating when this token will expire. */
   exp: number
+}
+
+/**
+ * Authorization state stored in session store between OAuth 2.0 authorization
+ * request and response.
+ */
+export interface AuthState {
+  /** Number of seconds since 1970-01-01 UTC, indicating when this state will expire. */
+  exp: number
+  /** A value used to associate a client session with an ID Token. */
+  nonce: string
+  /** An (original) URL where to redirect the user agent after successful authorization. */
+  url: string
+}
+
+export namespace AuthState {
+  /**
+   * Serializes the given AuthState object so it can be stored in session.
+   */
+  export function encode (obj: AuthState): string {
+    return JSON.stringify(obj)
+  }
+
+  /**
+   * Decodes the given AuthState string and validates its expiration time.
+   *
+   * @throws {HttpError} if the given string is not a valid JSON or it's expired.
+   */
+  export function decode (json: string): AuthState {
+    let obj: AuthState
+    try {
+      obj = JSON.parse(json)
+    } catch (err: any) {
+      throw HttpError(400, 'Invalid State',
+        `Failed to deserialize the stored authorization state: ${err.message}`)
+    }
+    // The in-memory keyval_zone doesn't support TTL. It shouldn't be used in
+    // production, but still better to not rely on it.
+    if (typeof obj.exp !== 'number' || obj.exp < timestamp()) {
+      throw HttpError(400, 'Invalid State', 'The authorization state has expired.')
+    }
+    return obj
+  }
 }
 
 type GrantType = 'authorization_code' | 'refresh_token'

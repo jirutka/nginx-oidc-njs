@@ -140,13 +140,6 @@ export function globMatch (glob: string, text: string): boolean {
 }
 
 /**
- * Returns a hash of the given CSRF `token`.
- */
-export function hashCsrfToken (token: string): string {
-  return webCrypto.createHash('sha256').update(token).digest('hex')
-}
-
-/**
  * Returns `true` if the given `value` represents a positive integer, i.e. it
  * can be converted to an integer and it's `>= 1`.
  */
@@ -242,6 +235,13 @@ export function renderTemplate (template: string, params: Record<string, unknown
     /\{\{\s*([A-Za-z0-9_$]+)\s*\}\}/g,
     (_, varName: string) => String(params[varName] ?? ''),
   )
+}
+
+/**
+ * Returns a SHA-256 digest encoded in hex of the given `data`.
+ */
+export function sha256 (data: NjsStringOrBuffer): string {
+  return webCrypto.createHash('sha256').update(data).digest('hex')
 }
 
 /**
