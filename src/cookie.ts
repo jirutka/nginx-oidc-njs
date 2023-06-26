@@ -1,3 +1,5 @@
+import { splitWithLimit } from './utils'
+
 
 /** `Set-Cookie` attributes without the cookie name and value. */
 export interface SetCookieAttrs {
@@ -77,7 +79,7 @@ export function formatCookieClear (name: string, attrs: SetCookieAttrs = {}): st
 export function parseCookieAttrs (value: string): SetCookieAttrs {
   // Note: This is more efficient than for-each.
   return value.split(';').reduce<SetCookieAttrs>((obj, str) => {
-    let [name, value] = str.trim().split('=', 2)
+    let [name, value] = splitWithLimit(str.trim(), '=', 2)
 
     switch ((name = name.toLowerCase())) {
       case 'httponly':

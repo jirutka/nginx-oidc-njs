@@ -7,6 +7,7 @@ import LogLevel from 'loglevel'
 
 import { asyncServer, AsyncServer } from './async-server'
 import { createClient } from './http-client'
+import { splitWithLimit } from './utils'
 
 import type { IntrospectionResponse } from '../../src/oauth'
 
@@ -78,7 +79,7 @@ function getBearerToken (req: Request): string | undefined {
   // Parse access token from the Authorization header
   const authorization = req.get('authorization')
   if (authorization?.startsWith('Bearer ')) {
-    return authorization.split(' ', 2)[1]
+    return splitWithLimit(authorization, ' ', 2)[1]
   }
   return
 }

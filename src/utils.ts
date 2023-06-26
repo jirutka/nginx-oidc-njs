@@ -252,6 +252,32 @@ export function splitWhitespace (str: string): string[] {
 }
 
 /**
+ * Splits `str` into substrings using the specified `separator` and returns them
+ * as an array. Unlike `String.prototype.split()`, the function stops splitting
+ * the string after `limit - 1` occurrence of the separator, i.e. the last
+ * element of the array contains the remaining of the string.
+ *
+ * @example
+ * split('foo bar baz', 2)  //=> ['foo', 'bar baz']
+ */
+export function splitWithLimit (str: string, separator: string, limit: number): string[] {
+  let idx
+  let lastIdx = 0
+  let res = []
+
+  while (--limit && (idx = str.indexOf(separator, lastIdx)) >= 0) {
+    res.push(str.substring(lastIdx, idx))
+    lastIdx = idx + separator.length
+  }
+
+  if (lastIdx < str.length) {
+    res.push(str.substring(lastIdx))
+  }
+
+  return res
+}
+
+/**
  * Returns the current unix timestamp in seconds.
  */
 export const timestamp = () => Math.floor(Date.now() / 1000)

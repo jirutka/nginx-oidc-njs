@@ -29,12 +29,29 @@ export function hashCsrf (value: string): string {
   return crypto.createHash('sha256').update(value).digest('hex')
 }
 
+export function splitWithLimit (str: string, separator: string, limit: number): string[] {
+  let idx = -1
+  let lastIdx = 0
+  const res = []
+
+  while (--limit && (idx = str.indexOf(separator, lastIdx)) >= 0) {
+    res.push(str.substring(lastIdx, idx))
+    lastIdx = idx + separator.length
+  }
+
+  if (lastIdx < str.length) {
+    res.push(str.substring(lastIdx))
+  }
+
+  return res
+}
+
 export function parseBasicAuthHeader (value: string): { username: string, password: string } | null {
   if (!value.startsWith('Basic ')) {
     return null
   }
   const decoded = Buffer.from(value.slice('Basic '.length), 'base64').toString()
-  const [username, password] = decoded.split(':', 2)
+  const [username, password] = splitWithLimit(decoded, ':', 2)
 
   return { username, password }
 }

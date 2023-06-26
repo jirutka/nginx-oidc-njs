@@ -1,6 +1,6 @@
 import { parseConf } from 'nginx-testing'
 
-import { arrify } from './utils'
+import { arrify, splitWithLimit } from './utils'
 
 import { configReader, Config } from '../../src/config'
 
@@ -23,7 +23,7 @@ export function parseNginxOidcConfig (nginxConf: string, path = '/http/server'):
 }
 
 function parseSetDirective (dir: string): [key: string, value: any] {
-  let [key, value] = dir.split(' ', 2)
+  let [key, value] = splitWithLimit(dir, ' ', 2)
 
   key = key.slice(1)
   // XXX: This is very simplified.
