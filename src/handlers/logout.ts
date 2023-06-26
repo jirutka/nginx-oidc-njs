@@ -1,9 +1,9 @@
-import qs from 'querystring'
+import qs, { ParsedUrlQueryInput } from 'querystring'
 
 import type { RequestHandler } from '../'
 import { Cookie, Session } from '../constants'
 import { formatCookieClear } from '../cookie'
-import { preferredMediaType } from '../utils'
+import { preferredMediaType, url } from '../utils'
 
 
 const supportedMediaType = ['-', 'text/html'] as const
@@ -41,11 +41,24 @@ export const logout: RequestHandler = ({ conf, getCookie, log, req, send, vars }
   if (req.method !== 'POST') {
     return send(405, undefined, { Allow: 'POST always' })
   }
-  const nextUri = req.args.nextUri
+
+  log.info?.(`logout: logging out user ${getCookie(Cookie.Username)}`)
+
+  let nextUri = req.args.nextUri
     ? qs.unescape(req.args.nextUri)
     : conf.postLogoutRedirectUri
 
-  log.info?.(`logout: logging out user ${getCookie(Cookie.Username)}`)
+  // OpenID Connect RP-Initiated Logout 1.0
+  if (conf.endSessionEndpoint) {
+    const args: ParsedUrlQueryInput = {
+      id_token_hint: vars[Session.IdToken],
+      client_id: conf.clientId,
+    }
+    if (nextUri) {
+      args.post_logout_redirect_uri = nextUri
+    }
+    nextUri = url(conf.endSessionEndpoint, args)
+  }
 
   vars[Session.AccessToken] = undefined
   vars[Session.IdToken] = undefined

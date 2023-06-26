@@ -8,6 +8,7 @@ import { splitWhitespace } from './utils'
 const configDescriptor = {
   issuer: undefined,
   authorizationEndpoint: undefined,
+  endSessionEndpoint: '',
   clientId: undefined,
   clientSecret: undefined,
   scope: 'openid',
