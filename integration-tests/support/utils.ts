@@ -1,10 +1,12 @@
 import crypto from 'node:crypto'
 
 
-export function arrify <T> (value: T | T[] | undefined | null): T[] {
+type Arrify<T> = T extends (null | undefined) ? [] : T extends readonly unknown[] ? T : T[]
+
+export function arrify <T> (value: T): Arrify<T> {
   return value == null ? []
     : Array.isArray(value) ? value
-    : [value]
+    : [value] as any
 }
 
 export function randomString (length = 5): string {

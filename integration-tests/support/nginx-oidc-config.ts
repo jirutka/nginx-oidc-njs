@@ -8,7 +8,7 @@ import { configReader, Config } from '../../src/config'
 export type { Config as NginxOidcConfig }
 
 export function parseNginxOidcConfig (nginxConf: string, path = '/http/server'): Config {
-  const directives = arrify(parseConf(nginxConf).get(`${path}/set`))
+  const directives: string[] = arrify(parseConf(nginxConf).get(`${path}/set`))
 
   if (directives.length < 1) {
     throw Error(`No 'set' directives found at '${path}' in given nginx config`)

@@ -42,7 +42,7 @@ export const createNginxVarsHook = (
   },
   async clear (names, opts = {}) {
     // TODO: make arrify compatible with readonly
-    await Promise.all(arrify(names as any).map(name => {
+    await Promise.all(arrify(names).map(name => {
       return httpClient.delete(`${baseUrl}/${name}`, {
         ...opts,
         throwHttpErrors: true,
