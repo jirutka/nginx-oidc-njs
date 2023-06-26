@@ -301,5 +301,5 @@ export function url (uri: string, query: ParsedUrlQueryInput): string {
 
 function substrBefore (str: string, searchStr: string): string {
   const idx = str.indexOf(searchStr)
-  return idx > 0 ? str.slice(idx) : str
+  return idx > 0 ? str.slice(0, idx) : str
 }
