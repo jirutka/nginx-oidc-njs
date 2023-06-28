@@ -3,7 +3,7 @@ import qs, { ParsedUrlQueryInput } from 'querystring'
 import type { RequestHandler } from '../'
 import { Cookie, Session } from '../constants'
 import { formatCookieClear } from '../cookie'
-import { preferredMediaType, url } from '../utils'
+import { absoluteUrl, preferredMediaType, url } from '../utils'
 
 
 const supportedMediaType = ['-', 'text/html'] as const
@@ -55,7 +55,7 @@ export const logout: RequestHandler = ({ conf, getCookie, log, req, send, vars }
       client_id: conf.clientId,
     }
     if (nextUri) {
-      args.post_logout_redirect_uri = nextUri
+      args.post_logout_redirect_uri = absoluteUrl(nextUri, vars)
     }
     nextUri = url(conf.endSessionEndpoint, args)
   }

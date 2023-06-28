@@ -2,7 +2,7 @@ import type { RequestHandler } from '../'
 import { Cookie, Session } from '../constants'
 import { formatCookie } from '../cookie'
 import { AuthState } from '../oauth'
-import { assert, extractUrlPath, randomString, sha256, timestamp, url } from '../utils'
+import { absoluteUrl, assert, extractUrlPath, randomString, sha256, timestamp, url } from '../utils'
 
 
 export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
@@ -27,7 +27,7 @@ export const login: RequestHandler = ({ conf, log, req, send, vars }) => {
   const authorizeUrl = url(conf.authorizationEndpoint, {
     response_type: 'code',
     client_id: conf.clientId,
-    redirect_uri: conf.redirectUri,
+    redirect_uri: absoluteUrl(conf.redirectUri, vars),
     scope: conf.scope,
     state: sha256(stateId),
     nonce,

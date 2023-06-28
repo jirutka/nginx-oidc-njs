@@ -4,6 +4,24 @@ import qs from 'querystring'
 import type { ParsedUrlQueryInput } from 'querystring'
 
 
+/**
+ * Constructs an absolute URL from the given `uri` path and object containing
+ * `scheme`, `host`, and `server_port`. If the `url` starts with `https://` or
+ * `http://`, it's returned as-is.
+ *
+ * **Note:** This function just concatenates strings, it does not normalize the
+ * path nor check if it's valid!
+ */
+export function absoluteUrl (uri: string, vars: Pick<NginxVariables, 'host' | 'scheme' | 'server_port'>): string {
+  if (uri.startsWith('https://') || uri.startsWith('http://')) {
+    return uri
+  }
+  const { scheme, host, server_port } = vars
+  const port = scheme === 'https' && server_port === '443' ? '' : `:${server_port}`
+
+  return `${scheme}://${host}${port}${uri}`
+}
+
 type Arrify<T> = T extends (null | undefined) ? [] : T extends readonly unknown[] ? T : T[]
 
 /**
