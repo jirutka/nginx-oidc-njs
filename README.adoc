@@ -13,6 +13,230 @@ TBD
 ** https://github.com/kjdev/nginx-auth-jwt[ngx_http_auth_jwt_module] ≥ 0.2.1
 
 
+== Configuration
+
+.Example of nginx.conf:
+[source, nginx]
+----
+http {
+  # Configure name servers used to resolve domain names.
+  resolver 193.17.47.1 185.43.135.1 [2001:148f:ffff::1] [2001:148f:fffe::1];
+
+  js_import oidc from /path/to/nginx-oidc-njs/nginx-oidc.njs;
+  include /path/to/nginx-oidc-njs/conf/http.conf;
+
+  # Define cache zone for requested and inspected tokens.
+  proxy_cache_path cache/oidc_tokens
+    keys_zone=oidc_tokens:1m
+    levels=2
+    use_temp_path=off
+    inactive=1h
+    max_size=4m;
+
+  keyval_zone_redis zone=oidc_id_tokens ttl=300;
+  keyval_zone_redis zone=oidc_access_tokens ttl=300;
+  keyval_zone_redis zone=oidc_refresh_tokens ttl=604800;
+  keyval_zone_redis zone=oidc_auth_states ttl=60;
+
+  server {
+    listen 443 ssl http2;
+    server_name client.example.org;
+
+    ...
+
+    include /path/to/nginx-oidc-njs/conf/server.conf;
+
+    # This must be large enough to fit a JWT token.
+    subrequest_output_buffer_size 32k;
+
+    set $oidc_issuer "https://openid.example.org";
+    set $oidc_authorization_endpoint "https://openid.example.org/authorize";
+    set $oidc_token_endpoint "https://openid.example.org/token";
+    set $oidc_end_session_endpoint "https://openid.example.org/logout";
+    set $oidc_jwks_file "/path/to/jwks.json";
+
+    set $oidc_client_id "oidc-njs";
+    set $oidc_client_secret "top-secret";
+    set $oidc_scope "openid profile";
+
+    # This must match the keys_zone name defined above in the http context.
+    set $oidc_cache_zone_tokens "oidc_tokens";
+
+    location /api/ {
+      include /path/to/nginx-oidc-njs/conf/auth-proxy.conf;
+
+      proxy_pass "https://rp.example.org";
+    }
+
+    location / {
+      set $oidc_access "flynnkev USER ADMIN";
+
+      include /path/to/nginx-oidc-njs/conf/auth-access.conf;
+    }
+  }
+}
+----
+
+
+=== Variables
+:oidc-connect-core-url: https://openid.net/specs/openid-connect-core-1_0.html
+:oidc-provider-metadata-url: https://openid.net/specs/openid-connect-discovery-1_0.html
+:oidc-provider-metadata-link: https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata[Provider Metadata]
+:rfc6749-url: https://datatracker.ietf.org/doc/html/rfc6749
+:rfc7517-url: https://datatracker.ietf.org/doc/html/rfc7517
+:rfc7662-url: https://datatracker.ietf.org/doc/html/rfc7662
+:ngx-docs-url: https://nginx.org/en/docs/http
+:ngx-http-core-url: {ngx-docs-url}/ngx_http_core_module.html
+:server-scheme-name-port: link:{ngx-http-core-url}#var_scheme[$scheme]://link:{ngx-http-core-url}#var_server_name[$server_name]:link:{ngx-http-core-url}#var_server_port[$server_port]
+
+This module is configured using nginx _variables_, which can be set with link:{ngx-docs-url}/ngx_http_rewrite_module.html#set[set], link:{ngx-docs-url}/ngx_http_map_module.html#map[map] or link:{ngx-docs-url}/ngx_http_js_module.html#js_var[js_var] directives.
+All variables should be set in the *server context* (or http context), unless specified otherwise.
+
+
+==== OIDC Provider
+
+The information for the following configuration variables can be retrieved from the link:{oidc-provider-metadata-url}#ProviderMetadata[OpenID Provider Discovery Metadata] exposed by your Authorization Server or from its documentation.
+
+$oidc_issuer::
+URL that the OIDC Provider asserts as its Issuer Identifier.
+It corresponds to property `issuer` in {oidc-provider-metadata-link}.
++
+This variable is *required*.
+
+$oidc_jwks_file::
+Path to the JSON file in the link:{rfc7517-url}#section-5[JWKS] format for validating JWT signature.
+This file can be downloaded from the location specified by the `jwks_uri` property in {oidc-provider-metadata-link}.
++
+This variable is *required*.
+
+$oidc_authorization_endpoint::
+URL of the link:{rfc6749-url}#section-3.1[OAuth 2.0 Authorization Endpoint] at the Authorization Server.
+It corresponds to property `authorization_endpoint` in {oidc-provider-metadata-link}.
++
+This variable is *required*.
+
+$oidc_token_endpoint::
+URL of the link:{rfc6749-url}#section-3.2[OAuth 2.0 Token Endpoint] at the Authorization Server.
+It corresponds to property `token_endpoint` in {oidc-provider-metadata-link}.
++
+This variable is *required*.
+
+$oidc_introspection_endpoint::
+URL of the link:{rfc7662-url}#section-2[OAuth 2.0 Token Introspection Endpoint] at the Authorization Server.
+It corresponds to property `introspection_endpoint` in {oidc-provider-metadata-link}.
++
+This variable is optional.
+
+$oidc_end_session_endpoint::
+URL of the link:{oidc-rp-init-logout-url}[Logout Endpoint] for the RP-Initiated Logout at the Authorization Server.
+It corresponds to property `end_session_endpoint` in {oidc-provider-metadata-link}.
++
+This variable is optional.
+
+
+==== Client
+
+$oidc_client_id::
+OAuth 2.0 link:{rfc6749-url}#section-2.2[Client Identifier] registered at the Authorization Server.
++
+This variable is *required.*
+
+$oidc_client_secret::
+OAuth 2.0 link:{rfc6749-url}#section-2.3.1[Client Secret] (password) associated with the *$oidc_client_id*.
++
+This variable is *required.*
+
+$oidc_scope::
+A space-separated set of link:{rfc6749-url}#section-3.3[OAuth 2.0 scopes] that should be requested.
++
+Default is `openid`.
+
+$oidc_claim_username::
+The link:{oidc-connect-core-url}#IDToken[ID Token] link:{oidc-connect-core-url}#StandardClaims[Claim] that contains the user’s unique identifier (typically a username).
+This is used for access control (see *$oidc_allow*) and logging.
++
+Default is `preferred_username`.
+
+$oidc_claim_roles::
+The link:{oidc-connect-core-url}#IDToken[ID Token] link:{oidc-connect-core-url}#StandardClaims[Claim] that contains the roles of the user (as a flat array).
+This is used for access control (see *$oidc_allow*).
++
+This variable is optional.
+
+$oidc_redirect_uri::
+URL of the Client’s link:{rfc6749-url}#section-3.1.2[Redirection Endpoint] previously registered at the Authorization Server.
+If only a path is provided (not an absolute URL), it will be prepended with `{server-scheme-name-port}`.
++
+Default is `/-/oidc/callback`, which corresponds to the _location_ in link:conf/server.conf[].
+
+$oidc_post_logout_redirect_uri::
+URL to which the user will be redirected after logging out.
+If *$oidc_end_session_endpoint* is specified, then this URL will be passed to the Authorization Server’s link:{oidc-rp-init-logout-url}[Logout Endpoint] via the `post_logout_redirect_uri` parameter and it must be previously registered at the Authorization Server.
++
+This variable is optional.
+
+
+==== Others
+
+$oidc_allow::
+A whitespace-separated list of usernames and roles.
+If the user has any of the specified roles or username, and has none of the roles or username specified in *$oidc_deny*, then access will be allowed.
+Otherwise, access will be denied.
++
+The user’s username and roles are retrieved from the ID Token as specified by *$oidc_claim_username* and *$oidc_claim_roles*.
+There are also two special roles:
++
+--
+* `ANONYMOUS` – no authentication is required, access is allowed to anyone.
+* `AUTHENTICATED` – any authenticated user is allowed.
+--
++
+This variable is used for link:conf/auth-access.conf[] and it can be set in the server or location context.
++
+Default is `AUTHENTICATED`.
+
+$oidc_deny::
+A whitespace-separated list of usernames and roles.
+If the user has any of the specified roles or username, then access will be denied.
++
+The user’s username and roles are retrieved from the ID Token as specified by *$oidc_claim_username* and *$oidc_claim_roles*.
++
+This variable is used for link:conf/auth-access.conf[] and it can be set in the server or location context.
++
+Default is _empty_.
+
+$oidc_cache_zone_tokens::
+Name of the {ngx-docs-url}/ngx_http_proxy_module.html#proxy_cache_path[proxy cache] keys_zone for caching tokens.
++
+Default is `oidc_tokens`.
+
+$oidc_cookie_attrs::
+https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#attributes[Set-Cookie attributes] to be added to the session cookies.
+Some attributes are overridden for certain cookies (_Max-Age_ and _Path_).
++
+Default is `Max-Age=2592000; Path=/; Secure; SameSite=strict`.
+
+$oidc_error_pages_dir::
+Path to the directory with error page templates.
+See <<Error Pages>> for more information.
+
+$oidc_log_level::
+The log level threshold for messages logged by this module.
++
+One of: `debug`, `info`, `warn`, `error`.
+Default is `info`.
+
+$oidc_log_prefix::
+The prefix for log messages.
++
+Default is ``[oidc] ``.
+
+
+=== Error Pages
+
+TBD
+
+
 == Development
 
 === System Requirements
