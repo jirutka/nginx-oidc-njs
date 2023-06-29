@@ -18,6 +18,7 @@
     "start": "run-p watch start-nginx",
     "start-nginx": "start-nginx --version 1.22.x --port 8090 --watch dist/ integration-tests/nginx.conf",
     "test": "rollup -c && mocha",
+    "test-only": "mocha",
     "watch": "rollup -c --watch --no-watch.clearScreen"
   },
   "devDependencies": {
