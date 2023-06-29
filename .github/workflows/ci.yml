@@ -13,11 +13,46 @@ jobs:
           - 1.22.x
           - 1.24.x
           - 1.25.x
-    env:
-      NGINX_VERSION: ${{ matrix.nginx }}
     steps:
       - uses: actions/checkout@v3
-      - run: npm clean-install
-      - run: npm run build
-      - run: npm run test
-      - run: npm run lint
+
+      - run: make deps
+      - run: make build
+      - run: make test NGINX_VERSION=${{ matrix.nginx }}
+      - run: make lint
+
+      - uses: actions/upload-artifact@v3
+        # Run only in the first job.
+        if: strategy.job-index == 0
+        with:
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') && github.event_name != 'pull_request'
+    needs:
+      - test
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+
+      - run: make deps
+
+      - run: make build
+
+      - name: Create tarball
+        run: |
+          VERSION=${GITHUB_REF##*/}
+          make tarball VERSION=${VERSION#v}
+
+      - name: Upload tarball to Releases
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/*.tar.gz.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
