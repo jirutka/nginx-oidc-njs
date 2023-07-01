@@ -3,6 +3,10 @@
 :gh-name: jirutka/{proj-name}
 :version: 0.0.0
 
+ifdef::env-github[]
+image:https://github.com/{gh-name}/workflows/CI/badge.svg[Binaries Workflow, link=https://github.com/{gh-name}/actions?query=workflow%3A%22CI%22]
+endif::env-github[]
+
 TBD
 
 
