@@ -1,16 +1,63 @@
 = NGINX OpenID Connect
 :proj-name: nginx-oidc-njs
 :gh-name: jirutka/{proj-name}
+:version: 0.0.0
 
 TBD
 
 
-== Requirements
+== Installation
 
+=== Requirements
+
+.*Runtime:*
 * http://nginx.org[nginx] with:
 ** http://nginx.org/en/docs/http/ngx_http_js_module.html[ngx_http_js_module] ≥ 0.7.0
 ** https://github.com/kjdev/nginx-keyval[ngx_http_keyval_module] ≥ 0.1.0
 ** https://github.com/kjdev/nginx-auth-jwt[ngx_http_auth_jwt_module] ≥ 0.2.1
+
+.*Build:*
+* https://nodejs.org[Node.js] 14.15+
+* https://docs.npmjs.com/cli/commands/npm[npm] (distributed with Node.js)
+* npm packages specified in link:package.json[] (will be installed using npm)
+
+
+=== From release tarball
+
+. Download and verify the latest release tarball:
++
+[source, sh, subs="+attributes"]
+curl -sSLO https://github.com/{gh-name}/releases/download/v{version}/{proj-name}-{version}.tar.gz
+curl -sSL https://github.com/{gh-name}/releases/download/v{version}/{proj-name}-{version}.tar.gz.sha256 | sha256sum -c
+
+. Install files somewhere, e.g. _/usr/local/share/{proj-name}_:
++
+[source, sh, subs="+attributes"]
+mkdir -p /usr/local/share/{proj-name}
+cp -r {proj-name}-{version}/* /usr/local/share/{proj-name}/
+
+
+=== From source
+
+. Install system dependencies specified in <<Requirements, build requirements>>.
+
+. Clone this repository and jump in:
++
+[source, sh, subs="+attributes"]
+git clone git@github.com:{gh-name}.git
+cd {proj-name}
+
+. Build the project:
++
+[source, sh]
+make build
+
+. Install files (you may need to run this with sudo):
++
+[source, sh]
+make install
++
+You may use the `DESTDIR` and `PREFIX` variables to specify the destination.
 
 
 == Configuration
@@ -235,42 +282,6 @@ Default is ``[oidc] ``.
 === Error Pages
 
 TBD
-
-
-== Development
-
-=== System Requirements
-
-* Linux (x86_64, aarch64, armv7 or ppc64le) or macOS
-* https://nodejs.org[Node.js] 14.15+
-* https://docs.npmjs.com/cli/v7/commands/npm/[npm] (distributed with Node.js)
-* https://pandoc.org[Pandoc] and https://asciidoctor.org[Asciidoctor] (used only for converting README.adoc to Markdown for npmjs)
-
-*NOTE:* If you use Linux or macOS, you do *not* need NGINX installed. Also, you do *not* need Docker or other containerization tool for developing and testing! See https://github.com/jirutka/nginx-testing[nginx-testing] for more information.
-
-
-=== Getting Started
-
-. Clone this repository:
-+
-[source, sh, subs="+attributes"]
-git clone https://github.com/{gh-name}.git
-cd {proj-name}
-
-. Install JavaScript dependencies from https://www.npmjs.com[npmjs]:
-+
-[source, sh]
-npm install
-
-. Build the project:
-+
-[source, sh]
-npm build
-
-. Run integration tests:
-+
-[source, sh]
-npm run test
 
 
 == License
