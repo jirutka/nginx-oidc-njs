@@ -183,8 +183,9 @@ export async function refreshTokens (ctx: Context, refreshToken: string): Promis
     const tokenSet = await requestToken(ctx, 'refresh_token', refreshToken) as DecodedTokenResponse
     const { access_token, id_token, refresh_token } = tokenSet
 
-    log.debug?.(`oauth: token refreshed, got id_token=${id_token}, access_token=${access_token},`
-              + ` refresh_token=${refresh_token}`)
+    log.debug?.(`oauth: token refreshed, received id_token=${id_token}`)
+    log.debug?.(`oauth: token refreshed, received access_token=${access_token}`)
+    log.debug?.(`oauth: token refreshed, received refresh_token=${refresh_token}`)
 
     await validateJwtSign(ctx, id_token)
     tokenSet.idToken = await decodeAndValidateIdToken(conf, id_token)

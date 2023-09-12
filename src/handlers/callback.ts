@@ -62,8 +62,9 @@ export const callback: RequestHandler = async (ctx) => {
   log.debug?.(`callback: requesting tokens using auth code: ${code}`)
 
   const tokenSet = await requestToken(ctx, 'authorization_code', code)
-  log.debug?.(`callback: received id_token=${tokenSet.id_token},`
-            + ` access_token=${tokenSet.access_token}, refresh_token=${tokenSet.refresh_token}`)
+  log.debug?.(`callback: received id_token=${tokenSet.id_token}`)
+  log.debug?.(`callback: received access_token=${tokenSet.access_token}`)
+  log.debug?.(`callback: received refresh_token=${tokenSet.refresh_token}`)
 
   await validateJwtSign(ctx, tokenSet.id_token)
   const { nonce, username } = await decodeAndValidateIdToken(conf, tokenSet.id_token)
