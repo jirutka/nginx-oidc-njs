@@ -1,7 +1,7 @@
-import type { RequestHandler } from '..'
+import type { Context, RequestHandler } from '..'
 import { authorizeAccess, isAnonymousAllowed } from '../access'
 import { Cookie, Session } from '../constants'
-import { decodeAndValidateIdToken } from '../jwt'
+import { IdToken, decodeAndValidateIdToken } from '../jwt'
 import { refreshTokens } from '../oauth'
 
 
@@ -18,6 +18,7 @@ export const auth_access: RequestHandler = async (ctx) => {
       vars[Session.IdToken] = undefined
     })
     if (idToken) {
+      exposeClaims(ctx, idToken)
       return authorizeAccess(ctx, idToken, conf)
     }
   }
@@ -27,6 +28,7 @@ export const auth_access: RequestHandler = async (ctx) => {
     log.info?.(`authorize: refreshing token for user ${getCookie(Cookie.Username)}`)
     const { idToken } = await refreshTokens(ctx, refreshToken)
 
+    exposeClaims(ctx, idToken)
     return authorizeAccess(ctx, idToken, conf)
   }
 
@@ -39,5 +41,19 @@ export const auth_access: RequestHandler = async (ctx) => {
     return send(401, undefined, {
       'WWW-Authenticate': 'Bearer error="unauthorized"',
     })
+  }
+}
+
+function exposeClaims ({ vars }: Context, idToken: IdToken): void {
+  // The following variables must be initialised using `js_var` to be set. If
+  // the variable is not initialised at all, the if condition is false.
+  if ('oidc_jwt_claims' in vars) {
+    vars.oidc_jwt_claims = JSON.stringify(idToken)
+  }
+  if ('oidc_jwt_claim_roles' in vars) {
+    vars.oidc_jwt_claim_roles = idToken.roles.join(' ')
+  }
+  if ('oidc_jwt_claim_username' in vars) {
+    vars.oidc_jwt_claim_username = idToken.username
   }
 }
