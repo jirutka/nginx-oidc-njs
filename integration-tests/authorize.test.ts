@@ -48,7 +48,10 @@ describe('Authorize', () => {
 
       when("I make a request to a secured page")
 
-      then("the response status should be {status}", 401)
+      then("the proxy should redirect me to $oidc_server_url/authorize", ({ resp, oauthServerUrl }) => {
+        assert(resp.statusCode === 303)
+        assert(resp.headers.location!.split('?')[0] === `${oauthServerUrl}/authorize`)
+      })
 
       and("session variable {varName} should be cleared", Session.RefreshToken)
     })

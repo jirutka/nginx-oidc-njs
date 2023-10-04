@@ -53,9 +53,19 @@ export const auth_pages: RequestHandler = async (ctx) => {
   const refreshToken = vars[Session.RefreshToken]
   if (refreshToken) {
     log.info?.(`authorize: refreshing token for user ${getCookie(Cookie.Username)}`)
-    const { idToken } = await refreshTokens(ctx, refreshToken)
 
-    return await authorizeAccess(ctx, idToken, accessRule)
+    const tokenSet = await refreshTokens(ctx, refreshToken).catch(err => {
+      if (err.status === 401) {
+        // The refresh token probably just expired, so let's act like the user
+        // is unauthenticated.
+        log.info?.(`authorize: invalid refresh token: ${err.detail ?? err.message}`)
+      } else {
+        throw err
+      }
+    })
+    if (tokenSet) {
+      return await authorizeAccess(ctx, tokenSet.idToken, accessRule)
+    }
   }
 
   if (isAnonymousAllowed(accessRule)) {
