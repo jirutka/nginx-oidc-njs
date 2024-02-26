@@ -2,6 +2,8 @@
 :proj-name: nginx-oidc-njs
 :gh-name: jirutka/{proj-name}
 :version: 0.0.0
+:ngx-docs-url: https://nginx.org/en/docs/http
+:ngx-http-core-url: {ngx-docs-url}/ngx_http_core_module.html
 
 ifdef::env-github[]
 image:https://github.com/{gh-name}/workflows/CI/badge.svg[Binaries Workflow, link=https://github.com/{gh-name}/actions?query=workflow%3A%22CI%22]
@@ -129,6 +131,33 @@ http {
 ----
 
 
+=== Snippets
+
+To simplify integration into your NGINX configuration, the link:conf/[] directory contains a number of configuration snippets with predefined directives which are necessary for this module to work.
+These snippets should be included in the NGINX configuration using the link:{ngx-http-core-url}#include[] directive.
+Alternatively, if you need to change them in any way, you can copy and paste their contents directly into your configuration.
+
+link:conf/http.conf[http.conf]::
+This snippet creates https://github.com/kjdev/nginx-keyval[keyval] variables and must be _included_ in the _http_ context.
+
+link:conf/server.conf[server.conf]::
+This snippet creates `/-/oidc/` and `/-/internal/` _locations_ and it should be _included_ in every _server_ context (aka virtual host) where you want to use OIDC.
+
+link:conf/auth-access.conf[auth-access.conf]::
+This snippet performs user access authorization using the OpenID Connect Authorization Code flow.
+It should be _included_ either in _location_ or _server_ context.
+You can use the *$oidc_allow* and *$oidc_deny* variables for fine-grained access control.
+
+link:conf/auth-pages.conf[auth-pages.conf]::
+TBD
+
+link:conf/auth-proxy.conf[auth-proxy.conf]::
+This snippet realises OAuth proxy for a resource provider.
+It should be _included_ either in _location_ or _server_ context.
+
+All _auth-*.conf_ snippets uses the link:{ngx-docs-url}/ngx_http_auth_request_module.html#auth_request[auth_request] directive that performs a subrequest to one of the internal _locations_ defined in link:conf/server.conf[server.conf].
+
+
 === Variables
 :oidc-connect-core-url: https://openid.net/specs/openid-connect-core-1_0.html
 :oidc-provider-metadata-url: https://openid.net/specs/openid-connect-discovery-1_0.html
@@ -136,8 +165,6 @@ http {
 :rfc6749-url: https://datatracker.ietf.org/doc/html/rfc6749
 :rfc7517-url: https://datatracker.ietf.org/doc/html/rfc7517
 :rfc7662-url: https://datatracker.ietf.org/doc/html/rfc7662
-:ngx-docs-url: https://nginx.org/en/docs/http
-:ngx-http-core-url: {ngx-docs-url}/ngx_http_core_module.html
 :server-scheme-name-port: link:{ngx-http-core-url}#var_scheme[$scheme]://link:{ngx-http-core-url}#var_server_name[$server_name]:link:{ngx-http-core-url}#var_server_port[$server_port]
 
 This module is configured using nginx _variables_, which can be set with link:{ngx-docs-url}/ngx_http_rewrite_module.html#set[set], link:{ngx-docs-url}/ngx_http_map_module.html#map[map] or link:{ngx-docs-url}/ngx_http_js_module.html#js_var[js_var] directives.
