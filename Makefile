@@ -74,6 +74,7 @@ bump-version:
 
 #: Bump version to $VERSION, create release commit and tag.
 release: .check-git-clean | bump-version
+	$(GIT) add README.adoc
 	$(GIT) commit --allow-empty -m "Release version $(VERSION)"
 	$(GIT) tag -s v$(VERSION) -m v$(VERSION)
 
