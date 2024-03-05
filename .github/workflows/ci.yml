@@ -14,14 +14,14 @@ jobs:
           - 1.24.x
           - 1.25.x
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - run: make deps
       - run: make build
       - run: make test NGINX_VERSION=${{ matrix.nginx }}
       - run: make lint
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         # Run only in the first job.
         if: strategy.job-index == 0
         with:
@@ -37,7 +37,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - run: make deps
 
