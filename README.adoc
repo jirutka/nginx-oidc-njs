@@ -9,7 +9,7 @@ ifdef::env-github[]
 image:https://github.com/{gh-name}/workflows/CI/badge.svg[Binaries Workflow, link=https://github.com/{gh-name}/actions?query=workflow%3A%22CI%22]
 endif::env-github[]
 
-TBD
+OpenID Connect and OAuth 2.0 module for NGINX written in https://nginx.org/en/docs/njs/[njs] (NGINX JavaScript).
 
 
 == Installation
