@@ -286,7 +286,7 @@ Default is _empty_.
 $oidc_cache_zone_tokens::
 Name of the {ngx-docs-url}/ngx_http_proxy_module.html#proxy_cache_path[proxy cache] keys_zone for caching tokens.
 +
-Default is `oidc_tokens`.
+This variable is *required.* footnote:[It has a default value in the module, but it must be defined for `proxy_cache` in link:conf/server.conf[].]
 
 $oidc_cookie_attrs::
 https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#attributes[Set-Cookie attributes] to be added to the session cookies.
