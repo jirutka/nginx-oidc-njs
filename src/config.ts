@@ -18,12 +18,14 @@ const configDescriptor = {
   postLogoutRedirectUri: '',
   internalLocationsPrefix: '/-/internal',
   cookieAttrs: {
-    // max-age=2592000; path=/; secure; samesite=strict
+    // max-age=2592000; path=/; secure; samesite=lax
+    // NOTE: samesite=strict doesn't work with e.g. Microsoft ATP (that crap
+    //  used when opening links from MS Teams).
     default: {
       maxAge: 2592000,  // 30 days
       path: '/',
       secure: true,
-      sameSite: 'strict',
+      sameSite: 'lax',
     } as SetCookieAttrs,
     parser: parseCookieAttrs,
   },

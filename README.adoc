@@ -292,7 +292,7 @@ $oidc_cookie_attrs::
 https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#attributes[Set-Cookie attributes] to be added to the session cookies.
 Some attributes are overridden for certain cookies (_Max-Age_ and _Path_).
 +
-Default is `Max-Age=2592000; Path=/; Secure; SameSite=strict`.
+Default is `Max-Age=2592000; Path=/; Secure; SameSite=lax`.footnote:[`SameSite=strict` doesn’t work with e.g. Microsoft ATP (that crap used when opening links from MS Teams) – `Set-Cookie` is not propagated.]
 
 $oidc_error_pages_dir::
 Path to the directory with error page templates.
